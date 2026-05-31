@@ -1,0 +1,435 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:var(--color-text-primary);--ink-mid:var(--color-text-secondary);--ink-soft:var(--color-text-tertiary);
+  --surf:var(--color-background-primary);--surf2:var(--color-background-secondary);
+  --bdr:var(--color-border-tertiary);--bdr2:var(--color-border-secondary);
+  --v1:#D4537E;--v1l:#FBEAF0;--v1t:#72243E;
+  --v2:#1D9E75;--v2l:#E1F5EE;--v2t:#085041;
+  --v3:#BA7517;--v3l:#FAEEDA;--v3t:#633806;
+  --v4:#534AB7;--v4l:#EEEDFE;--v4t:#3C3489;
+  --v5:#D85A30;--v5l:#FAECE7;--v5t:#712B13;
+}
+#app{padding:1rem 0 2rem;font-family:'Caveat',cursive;}
+
+.header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:.75rem;border-bottom:2px solid var(--ink);}
+.journal-name{font-size:36px;font-weight:700;color:var(--ink);line-height:1;}
+.date-stamp{font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-mid);text-align:right;}
+.streak-badge{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;background:var(--v3l);color:var(--v3t);padding:3px 8px;border-radius:20px;margin-top:4px;display:inline-block;}
+
+.vibe-label{font-size:13px;color:var(--ink-soft);margin-bottom:8px;font-family:'Space Mono',monospace;}
+.vibes{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.25rem;}
+.vibe{cursor:pointer;border-radius:20px;padding:6px 14px;font-size:18px;border:1.5px solid var(--bdr);background:var(--surf2);transition:transform .12s,border-color .12s;font-family:'Caveat',cursive;color:var(--ink);}
+.vibe:hover{transform:scale(1.08);}
+.vibe.on{transform:scale(1.12);}
+.vibe[data-v="0"].on{background:var(--v1l);color:var(--v1);border-color:var(--v1);}
+.vibe[data-v="1"].on{background:var(--v2l);color:var(--v2);border-color:var(--v2);}
+.vibe[data-v="2"].on{background:var(--v3l);color:var(--v3);border-color:var(--v3);}
+.vibe[data-v="3"].on{background:var(--v4l);color:var(--v4);border-color:var(--v4);}
+.vibe[data-v="4"].on{background:var(--v5l);color:var(--v5);border-color:var(--v5);}
+
+.prompt-strip{background:var(--surf2);border-radius:var(--border-radius-lg);padding:.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px;cursor:pointer;border:.5px solid var(--bdr);transition:border-color .15s;}
+.prompt-strip:hover{border-color:var(--bdr2);}
+.prompt-text{font-size:16px;color:var(--ink-mid);flex:1;font-style:italic;}
+.prompt-tap{font-family:'Space Mono',monospace;font-size:10px;color:var(--ink-soft);}
+
+.write-area{border:1.5px dashed var(--bdr2);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;background:var(--surf);}
+.write-area textarea{width:100%;background:transparent;border:none;outline:none;resize:none;font-family:'Caveat',cursive;font-size:20px;line-height:1.7;color:var(--ink);min-height:120px;}
+.write-area textarea::placeholder{color:var(--ink-soft);}
+
+.word-o-meter{display:flex;align-items:center;gap:10px;margin-bottom:1rem;}
+.meter-track{flex:1;height:6px;background:var(--surf2);border-radius:3px;overflow:hidden;}
+.meter-fill{height:100%;border-radius:3px;background:var(--v2);transition:width .3s;}
+.meter-label{font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+
+.action-row{display:flex;gap:10px;margin-bottom:1.5rem;align-items:center;}
+.save-btn{background:var(--ink);color:var(--surf);border:none;border-radius:var(--border-radius-md);padding:10px 22px;font-family:'Caveat',cursive;font-size:20px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;flex:1;}
+.save-btn:hover{opacity:.85;}
+.save-btn:active{transform:scale(.97);}
+.clear-btn{border:1.5px solid var(--bdr2);border-radius:var(--border-radius-md);padding:10px 16px;font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-mid);cursor:pointer;background:transparent;}
+.clear-btn:hover{color:var(--ink);}
+
+.dog-scene{
+  border-radius:var(--border-radius-lg);border:1.5px solid var(--bdr2);
+  background:var(--surf2);padding:1.25rem;margin-bottom:1.5rem;
+  display:none;
+}
+.dog-scene.visible{display:block;}
+.dog-header{display:flex;align-items:center;gap:12px;margin-bottom:1rem;}
+.dog-name-badge{font-family:'Space Mono',monospace;font-size:10px;font-weight:700;background:var(--v3l);color:var(--v3t);padding:3px 10px;border-radius:20px;}
+.dog-intro{font-size:15px;color:var(--ink-mid);font-style:italic;}
+
+.dog-canvas-wrap{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem;}
+.dog-svg-col{flex-shrink:0;}
+.chat-col{flex:1;display:flex;flex-direction:column;gap:8px;}
+
+.bubble{
+  border-radius:var(--border-radius-lg);padding:.75rem 1rem;
+  font-family:'Caveat',cursive;font-size:18px;line-height:1.5;
+  border:1.5px solid var(--bdr);background:var(--surf);
+  color:var(--ink);position:relative;
+}
+.bubble.dog{background:var(--v3l);border-color:var(--v3);color:var(--v3t);}
+.bubble.user{background:var(--v4l);border-color:var(--v4);color:var(--v4t);text-align:right;}
+.bubble.loading{color:var(--ink-soft);font-style:italic;}
+
+.feel-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:.5rem;}
+.feel-btn{
+  border-radius:20px;padding:6px 16px;font-family:'Caveat',cursive;font-size:17px;
+  border:1.5px solid var(--bdr2);background:var(--surf);color:var(--ink);
+  cursor:pointer;transition:transform .12s,background .12s;
+}
+.feel-btn:hover{transform:scale(1.06);background:var(--surf2);}
+
+.chat-input-row{display:flex;gap:8px;margin-top:.5rem;}
+.chat-input-row input{
+  flex:1;border:1.5px solid var(--bdr2);border-radius:var(--border-radius-md);
+  padding:8px 14px;font-family:'Caveat',cursive;font-size:18px;
+  background:var(--surf);color:var(--ink);outline:none;
+}
+.chat-input-row input:focus{border-color:var(--ink);}
+.send-btn{
+  background:var(--ink);color:var(--surf);border:none;
+  border-radius:var(--border-radius-md);padding:8px 16px;
+  font-family:'Caveat',cursive;font-size:18px;cursor:pointer;
+  transition:opacity .15s;
+}
+.send-btn:hover{opacity:.82;}
+
+.divider{display:flex;align-items:center;gap:12px;margin:.25rem 0 1rem;}
+.divider-line{flex:1;height:.5px;background:var(--bdr);}
+.divider-txt{font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-soft);}
+
+.cards{display:flex;flex-direction:column;gap:12px;}
+.card{border-radius:var(--border-radius-lg);border:1.5px solid;padding:1rem 1.25rem;cursor:pointer;transition:transform .12s;}
+.card:hover{transform:translateX(3px);}
+.card-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.card-vibe{font-size:16px;font-weight:600;}
+.card-meta{font-family:'Space Mono',monospace;font-size:10px;color:var(--ink-soft);white-space:nowrap;}
+.card-preview{font-size:17px;line-height:1.5;margin-top:4px;color:var(--ink-mid);}
+.card-full{font-size:18px;line-height:1.7;margin-top:10px;padding-top:10px;border-top:.5px solid;display:none;white-space:pre-wrap;color:var(--ink);}
+.card.open .card-full{display:block;}
+.card-del{font-size:14px;background:none;border:none;cursor:pointer;padding:2px 6px;color:var(--ink-soft);transition:color .15s;display:none;border-radius:4px;}
+.card:hover .card-del,.card.open .card-del{display:inline;}
+.card-del:hover{color:#E24B4A;}
+.v0{border-color:var(--v1);background:var(--v1l);}.v0 .card-vibe{color:var(--v1t);}.v0 .card-full{border-color:var(--v1);}
+.v1{border-color:var(--v2);background:var(--v2l);}.v1 .card-vibe{color:var(--v2t);}.v1 .card-full{border-color:var(--v2);}
+.v2{border-color:var(--v3);background:var(--v3l);}.v2 .card-vibe{color:var(--v3t);}.v2 .card-full{border-color:var(--v3);}
+.v3{border-color:var(--v4);background:var(--v4l);}.v3 .card-vibe{color:var(--v4t);}.v3 .card-full{border-color:var(--v4);}
+.v4{border-color:var(--v5);background:var(--v5l);}.v4 .card-vibe{color:var(--v5t);}.v4 .card-full{border-color:var(--v5);}
+.vdef{border-color:var(--bdr2);background:var(--surf2);}
+.empty{text-align:center;padding:2rem;font-size:18px;color:var(--ink-soft);font-style:italic;}
+
+@keyframes wagTail{0%,100%{transform:rotate(-15deg);}50%{transform:rotate(15deg);}}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.wag{animation:wagTail .4s ease-in-out infinite;}
+.bounce{animation:bounce .6s ease-in-out infinite;}
+</style>
+
+<div id="app">
+  <h2 class="sr-only">Creative journal with a dog companion who listens to your feelings after you write.</h2>
+
+  <div class="header">
+    <div class="journal-name">my journal ✦</div>
+    <div class="date-stamp">
+      <div id="hdate"></div>
+      <div class="streak-badge" id="streak-badge">✦ 0 entries</div>
+    </div>
+  </div>
+
+  <div class="vibe-label">today's vibe →</div>
+  <div class="vibes">
+    <div class="vibe" data-v="0">loved up</div>
+    <div class="vibe" data-v="1">zen mode</div>
+    <div class="vibe" data-v="2">golden hour</div>
+    <div class="vibe" data-v="3">deep thoughts</div>
+    <div class="vibe" data-v="4">spicy day</div>
+  </div>
+
+  <div class="prompt-strip" id="prompt-strip">
+    <span style="font-size:20px;">&#9861;</span>
+    <span class="prompt-text" id="prompt-txt">tap for a writing spark...</span>
+    <span class="prompt-tap">shuffle</span>
+  </div>
+
+  <div class="write-area">
+    <textarea id="txt" placeholder="start writing... no rules, no pressure"></textarea>
+  </div>
+
+  <div class="word-o-meter">
+    <span class="meter-label" style="font-size:12px;">words</span>
+    <div class="meter-track"><div class="meter-fill" id="meter" style="width:0%"></div></div>
+    <span class="meter-label" id="wcount">0</span>
+  </div>
+
+  <div class="action-row">
+    <button class="save-btn" id="save-btn">drop it in the journal</button>
+    <button class="clear-btn" id="clear-btn">clear</button>
+  </div>
+
+  <div class="dog-scene" id="dog-scene">
+    <div class="dog-header">
+      <div class="dog-name-badge">Biscuit is here</div>
+      <div class="dog-intro">your fluffy listener, always ready</div>
+    </div>
+    <div class="dog-canvas-wrap">
+      <div class="dog-svg-col" id="dog-svg-col"></div>
+      <div class="chat-col" id="chat-col"></div>
+    </div>
+    <div class="feel-buttons" id="feel-buttons"></div>
+    <div class="chat-input-row" id="chat-input-row" style="display:none;">
+      <input type="text" id="chat-input" placeholder="tell Biscuit more..." />
+      <button class="send-btn" id="send-btn">send</button>
+    </div>
+  </div>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-txt" id="entry-count-label">past pages</div>
+    <div class="divider-line"></div>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<script>
+const KEY='fun_journal_v2';
+const PROMPTS=['What made you smile today, even just a little?','Describe your current mood as a weather forecast.','If today were a song, what would it sound like?','What is something small you are proud of lately?','Write a letter to the version of you from 5 years ago.','What would your ideal Saturday look like?','Name three things that are working in your life right now.','What is something you want to let go of?','Describe a place that makes you feel safe and calm.','What is a dream you have not told anyone about?','If you could change one thing about today, what would it be?','What are you learning about yourself lately?','Describe someone who made your day better recently.','What does your body need right now?','Write about something that surprised you this week.'];
+const VIBES=['loved up','zen mode','golden hour','deep thoughts','spicy day'];
+const COLORS=['v0','v1','v2','v3','v4'];
+
+let entries=[],selectedVibe=-1,expandedId=null,promptIdx=Math.floor(Math.random()*PROMPTS.length);
+let chatHistory=[], dogMood='happy';
+
+async function loadEntries(){try{const r=await window.storage.get(KEY);entries=r?JSON.parse(r.value):[];}catch(e){entries=[];}render();}
+async function saveEntries(){try{await window.storage.set(KEY,JSON.stringify(entries));}catch(e){}}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+window.toggleCard=id=>{expandedId=expandedId===id?null:id;render();};
+window.delEntry=async id=>{entries=entries.filter(e=>e.id!==id);if(expandedId===id)expandedId=null;await saveEntries();render();};
+
+function render(){
+  const el=document.getElementById('cards');
+  document.getElementById('streak-badge').textContent=`✦ ${entries.length} ${entries.length===1?'entry':'entries'}`;
+  document.getElementById('entry-count-label').textContent=entries.length?`${entries.length} past ${entries.length===1?'page':'pages'}`:'past pages';
+  if(!entries.length){el.innerHTML='<div class="empty">your story starts with the first word ✦</div>';return;}
+  el.innerHTML=entries.map(e=>{
+    const cls=e.vi>=0?COLORS[e.vi]:'vdef';
+    const vt=e.vi>=0?VIBES[e.vi]:'';
+    const preview=e.text.length>80?e.text.slice(0,80)+'…':e.text;
+    return `<div class="card ${cls}${expandedId===e.id?' open':''}" onclick="toggleCard('${e.id}')">
+      <div class="card-top">
+        <span class="card-vibe">${vt?vt+' ✦':'✦ no vibe'}</span>
+        <span style="display:flex;align-items:center;gap:4px;">
+          <span class="card-meta">${e.date}</span>
+          <button class="card-del" onclick="event.stopPropagation();delEntry('${e.id}')" aria-label="delete"><i class="ti ti-trash" aria-hidden="true"></i></button>
+        </span>
+      </div>
+      <div class="card-preview">${esc(preview)}</div>
+      <div class="card-full">${esc(e.text)}</div>
+    </div>`;
+  }).join('');
+}
+
+function dogSVG(mood){
+  const tailClass = mood==='excited'?'wag':'';
+  const bodyClass = mood==='excited'?'bounce':'';
+  const eyeExpr = mood==='sad'?'M62,52 Q65,49 68,52':'M62,50 Q65,54 68,50';
+  const mouthExpr = mood==='sad'?'M61,60 Q65,57 69,60':mood==='excited'?'M60,59 Q65,65 70,59':'M61,59 Q65,63 69,59';
+  const heartVis = mood==='excited'?'':'display:none;';
+  return `<svg width="110" height="130" viewBox="0 0 110 130" xmlns="http://www.w3.org/2000/svg">
+    <g class="${bodyClass}">
+      <ellipse cx="55" cy="95" rx="28" ry="22" fill="#EF9F27" stroke="#BA7517" stroke-width="1.5"/>
+      <ellipse cx="35" cy="110" rx="9" ry="7" fill="#EF9F27" stroke="#BA7517" stroke-width="1.2"/>
+      <ellipse cx="75" cy="110" rx="9" ry="7" fill="#EF9F27" stroke="#BA7517" stroke-width="1.2"/>
+      <ellipse cx="42" cy="120" rx="7" ry="5" fill="#EF9F27" stroke="#BA7517" stroke-width="1.2"/>
+      <ellipse cx="68" cy="120" rx="7" ry="5" fill="#EF9F27" stroke="#BA7517" stroke-width="1.2"/>
+      <ellipse cx="55" cy="58" rx="22" ry="20" fill="#FAC775" stroke="#BA7517" stroke-width="1.5"/>
+      <ellipse cx="55" cy="68" rx="12" ry="9" fill="#EF9F27" stroke="#BA7517" stroke-width="1"/>
+      <path d="M34,44 Q30,28 40,34 Q34,22 48,32" fill="#EF9F27" stroke="#BA7517" stroke-width="1.2"/>
+      <path d="M76,44 Q80,28 70,34 Q76,22 62,32" fill="#EF9F27" stroke="#BA7517" stroke-width="1.2"/>
+      <ellipse cx="62" cy="51" rx="5" ry="4" fill="#2C2C2A"/>
+      <ellipse cx="64" cy="50" rx="1.5" ry="1.5" fill="white"/>
+      <ellipse cx="48" cy="51" rx="5" ry="4" fill="#2C2C2A"/>
+      <ellipse cx="50" cy="50" rx="1.5" ry="1.5" fill="white"/>
+      <path d="${eyeExpr}" fill="none" stroke="#2C2C2A" stroke-width="1" stroke-linecap="round"/>
+      <path d="M48,52 Q46,49 44,52" fill="none" stroke="#2C2C2A" stroke-width="1" stroke-linecap="round"/>
+      <ellipse cx="55" cy="63" rx="5" ry="3.5" fill="#D85A30"/>
+      <path d="${mouthExpr}" fill="none" stroke="#712B13" stroke-width="1.5" stroke-linecap="round"/>
+      <g class="${tailClass}" style="transform-origin:27px 88px;">
+        <path d="M27,88 Q10,78 8,65 Q6,55 14,52" fill="none" stroke="#EF9F27" stroke-width="5" stroke-linecap="round"/>
+      </g>
+    </g>
+    <g style="${heartVis}">
+      <path d="M78,30 Q80,26 84,30 Q88,26 90,30 Q90,35 84,40 Z" fill="#D4537E"/>
+      <path d="M20,35 Q22,31 26,35 Q30,31 32,35 Q32,40 26,45 Z" fill="#D4537E"/>
+    </g>
+  </svg>`;
+}
+
+function showDog(entryText, vibeIdx){
+  const scene=document.getElementById('dog-scene');
+  scene.classList.add('visible');
+  chatHistory=[];
+  dogMood='happy';
+  document.getElementById('dog-svg-col').innerHTML=dogSVG('happy');
+  document.getElementById('chat-input-row').style.display='none';
+
+  const vibe = vibeIdx>=0?VIBES[vibeIdx]:'';
+  const feelBtns=[
+    {label:'happy',emoji:'happy'},
+    {label:'sad',emoji:'sad'},
+    {label:'stressed',emoji:'sad'},
+    {label:'grateful',emoji:'excited'},
+    {label:'excited',emoji:'excited'},
+    {label:'meh',emoji:'happy'},
+  ];
+
+  const fbEl=document.getElementById('feel-buttons');
+  fbEl.innerHTML=`<span style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-soft);width:100%;margin-bottom:4px;">how are you feeling right now?</span>`
+    +feelBtns.map(f=>`<button class="feel-btn" onclick="pickFeel('${f.label}','${f.emoji}')">${f.label}</button>`).join('');
+
+  const chatCol=document.getElementById('chat-col');
+  chatCol.innerHTML=`<div class="bubble dog">Woof! I read everything you wrote... You okay? Tell me how you're feeling!</div>`;
+
+  askDog(entryText, vibe);
+}
+
+async function askDog(entry, vibe){
+  const system=`You are Biscuit, an adorable golden retriever dog who is a warm, playful emotional support companion. You just read the user's journal entry and want to comfort and engage with their feelings. 
+  Rules:
+  - Speak like a sweet, enthusiastic dog who genuinely cares — warm, a little goofy, super loving
+  - Keep responses SHORT (2-3 sentences max), like a dog's loving attention
+  - Occasionally add "woof", "arf", or *wags tail* for personality but don't overdo it
+  - Be emotionally perceptive — pick up on feelings from their writing
+  - Ask ONE simple follow-up question to invite them to share more
+  - Never be clinical or therapist-like — just a loving, listening dog friend
+  Journal entry: "${entry}"
+  ${vibe?`Their chosen vibe today: ${vibe}`:''}
+  Give your first warm reaction to their journal entry.`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system,messages:[{role:'user',content:'React to my journal entry, Biscuit!'}]})});
+    const data=await res.json();
+    const reply=data.content.map(b=>b.text||'').join('');
+    const chatCol=document.getElementById('chat-col');
+    const existing=chatCol.querySelectorAll('.bubble.dog');
+    existing.forEach(b=>b.remove());
+    chatCol.innerHTML=`<div class="bubble dog">${esc(reply)}</div>`;
+    chatHistory.push({role:'user',content:'React to my journal entry!'});
+    chatHistory.push({role:'assistant',content:reply});
+    document.getElementById('chat-input-row').style.display='flex';
+    document.getElementById('chat-input').focus();
+  }catch(e){
+    document.getElementById('chat-col').innerHTML=`<div class="bubble dog">*wags tail* I'm here for you! Tell me how you're feeling today!</div>`;
+    document.getElementById('chat-input-row').style.display='flex';
+  }
+}
+
+window.pickFeel=async function(feel, moodKey){
+  dogMood=moodKey;
+  document.getElementById('dog-svg-col').innerHTML=dogSVG(moodKey);
+  document.getElementById('feel-buttons').innerHTML='';
+
+  const chatCol=document.getElementById('chat-col');
+  chatCol.innerHTML+=`<div class="bubble user">${feel}</div>`;
+  chatCol.innerHTML+=`<div class="bubble dog loading">Biscuit is thinking...</div>`;
+
+  chatHistory.push({role:'user',content:`I'm feeling ${feel} right now.`});
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are Biscuit, an adorable golden retriever emotional support dog. Be warm, short (2-3 sentences), and caring. The user said they feel "${feel}". Respond with love, validate their feeling, and ask one gentle follow-up question to invite them to share more.`,messages:chatHistory})});
+    const data=await res.json();
+    const reply=data.content.map(b=>b.text||'').join('');
+    const loading=chatCol.querySelector('.loading');
+    if(loading)loading.remove();
+    chatCol.innerHTML+=`<div class="bubble dog">${esc(reply)}</div>`;
+    chatHistory.push({role:'assistant',content:reply});
+    document.getElementById('chat-input-row').style.display='flex';
+    document.getElementById('chat-input').focus();
+    if(feel==='excited'||feel==='grateful'){document.getElementById('dog-svg-col').innerHTML=dogSVG('excited');}
+    else if(feel==='sad'||feel==='stressed'){document.getElementById('dog-svg-col').innerHTML=dogSVG('sad');}
+  }catch(e){
+    const loading=chatCol.querySelector('.loading');
+    if(loading)loading.textContent='*nuzzles you gently* I hear you. I\'m right here!';
+  }
+};
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim();
+  if(!msg)return;
+  input.value='';
+  const chatCol=document.getElementById('chat-col');
+  chatCol.innerHTML+=`<div class="bubble user">${esc(msg)}</div>`;
+  chatCol.innerHTML+=`<div class="bubble dog loading">Biscuit is listening...</div>`;
+  chatHistory.push({role:'user',content:msg});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are Biscuit, an adorable golden retriever emotional support dog. Be warm, brief (2-3 sentences), caring, and attentive. Continue the conversation naturally. Occasionally wag your tail or nuzzle. Always end with a question or warm encouragement.`,messages:chatHistory})});
+    const data=await res.json();
+    const reply=data.content.map(b=>b.text||'').join('');
+    const loading=chatCol.querySelector('.loading');
+    if(loading)loading.remove();
+    chatCol.innerHTML+=`<div class="bubble dog">${esc(reply)}</div>`;
+    chatHistory.push({role:'assistant',content:reply});
+    if(msg.match(/happy|great|amazing|love|yay|wonderful/i)){document.getElementById('dog-svg-col').innerHTML=dogSVG('excited');}
+    else if(msg.match(/sad|cry|miss|hurt|tired|stress|anxious|worried/i)){document.getElementById('dog-svg-col').innerHTML=dogSVG('sad');}
+    else{document.getElementById('dog-svg-col').innerHTML=dogSVG('happy');}
+  }catch(e){
+    const loading=chatCol.querySelector('.loading');
+    if(loading)loading.textContent='*licks your hand* You\'re doing great, I promise!';
+  }
+}
+
+document.getElementById('send-btn').addEventListener('click',sendChat);
+document.getElementById('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')sendChat();});
+
+document.querySelectorAll('.vibe').forEach(v=>{
+  v.addEventListener('click',()=>{
+    const idx=parseInt(v.dataset.v);
+    selectedVibe=selectedVibe===idx?-1:idx;
+    document.querySelectorAll('.vibe').forEach(b=>b.classList.remove('on'));
+    if(selectedVibe>=0)v.classList.add('on');
+  });
+});
+
+const txt=document.getElementById('txt');
+const meter=document.getElementById('meter');
+const wcount=document.getElementById('wcount');
+txt.addEventListener('input',()=>{
+  const words=txt.value.trim().split(/\s+/).filter(Boolean).length;
+  wcount.textContent=words;
+  meter.style.width=Math.min(words/50*100,100)+'%';
+  const pct=words/50;
+  meter.style.background=pct<0.4?'#1D9E75':pct<0.8?'#BA7517':'#D4537E';
+});
+
+document.getElementById('prompt-strip').addEventListener('click',()=>{
+  promptIdx=(promptIdx+1)%PROMPTS.length;
+  const el=document.getElementById('prompt-txt');
+  el.style.opacity='0';
+  setTimeout(()=>{el.textContent=PROMPTS[promptIdx];el.style.transition='opacity .2s';el.style.opacity='1';},150);
+});
+
+document.getElementById('save-btn').addEventListener('click',async()=>{
+  const text=txt.value.trim();if(!text)return;
+  const date=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const entry={id:String(Date.now()),text,vi:selectedVibe,date};
+  entries.unshift(entry);
+  await saveEntries();
+  const savedText=text;
+  const savedVibe=selectedVibe;
+  txt.value='';meter.style.width='0%';wcount.textContent='0';
+  render();
+  const btn=document.getElementById('save-btn');
+  btn.textContent='saved! ✦';
+  setTimeout(()=>btn.textContent='drop it in the journal',1600);
+  showDog(savedText, savedVibe);
+});
+
+document.getElementById('clear-btn').addEventListener('click',()=>{txt.value='';meter.style.width='0%';wcount.textContent='0';});
+document.getElementById('hdate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+document.getElementById('prompt-txt').textContent=PROMPTS[promptIdx];
+loadEntries();
+</script>
