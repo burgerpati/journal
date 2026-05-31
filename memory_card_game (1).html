@@ -1,0 +1,242 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:var(--color-text-primary);
+  --soft:var(--color-text-secondary);
+  --hint:var(--color-text-tertiary);
+  --surf:var(--color-background-primary);
+  --surf2:var(--color-background-secondary);
+  --bdr:var(--color-border-tertiary);
+  --bdr2:var(--color-border-secondary);
+}
+#app{padding:1.25rem 0 2rem;font-family:'Nunito',sans-serif;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+.game-title{font-family:'Fredoka One',cursive;font-size:28px;color:var(--ink);letter-spacing:0.5px;}
+.stats{display:flex;gap:10px;}
+.stat{background:var(--surf2);border-radius:var(--border-radius-md);padding:6px 14px;text-align:center;}
+.stat-n{font-family:'Fredoka One',cursive;font-size:20px;color:var(--ink);}
+.stat-l{font-size:11px;color:var(--hint);font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.diff-row{display:flex;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;}
+.diff-label{font-size:13px;color:var(--hint);font-weight:600;}
+.diff-btn{
+  border:1.5px solid var(--bdr2);border-radius:20px;padding:5px 16px;
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;background:var(--surf2);color:var(--soft);transition:all .15s;
+}
+.diff-btn:hover{color:var(--ink);border-color:var(--ink);}
+.diff-btn.active{background:#534AB7;border-color:#534AB7;color:#EEEDFE;}
+.grid{display:grid;gap:10px;margin-bottom:1.25rem;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-5{grid-template-columns:repeat(5,1fr);}
+.grid-6{grid-template-columns:repeat(6,1fr);}
+.card-wrap{aspect-ratio:1;perspective:600px;cursor:pointer;}
+.card-inner{
+  width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+.card-wrap.flipped .card-inner,.card-wrap.matched .card-inner{transform:rotateY(180deg);}
+.card-face{
+  position:absolute;inset:0;border-radius:var(--border-radius-lg);
+  display:flex;align-items:center;justify-content:center;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border:1.5px solid var(--bdr2);
+}
+.card-back{
+  background:var(--surf2);font-size:24px;
+}
+.card-back-pattern{
+  width:70%;height:70%;border-radius:50%;
+  border:2px solid var(--bdr2);display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:var(--hint);
+}
+.card-front{
+  background:var(--surf);transform:rotateY(180deg);
+  font-size:36px;
+}
+.card-wrap.matched .card-face.card-front{
+  background:#E1F5EE;border-color:#1D9E75;
+}
+.card-wrap.wrong .card-inner{animation:shake .3s ease;}
+@keyframes shake{0%,100%{transform:rotateY(180deg) translateX(0)}33%{transform:rotateY(180deg) translateX(-5px)}66%{transform:rotateY(180deg) translateX(5px)}}
+
+.msg-bar{
+  min-height:40px;text-align:center;font-family:'Fredoka One',cursive;
+  font-size:20px;color:var(--ink);margin-bottom:1rem;letter-spacing:.3px;
+}
+.action-row{display:flex;gap:10px;justify-content:center;}
+.restart-btn{
+  background:#534AB7;color:#EEEDFE;border:none;
+  border-radius:var(--border-radius-md);padding:10px 28px;
+  font-family:'Fredoka One',cursive;font-size:18px;cursor:pointer;
+  transition:opacity .15s,transform .1s;
+}
+.restart-btn:hover{opacity:.87;}
+.restart-btn:active{transform:scale(.97);}
+.write-btn{
+  background:var(--surf2);color:var(--ink);border:1.5px solid var(--bdr2);
+  border-radius:var(--border-radius-md);padding:10px 20px;
+  font-family:'Fredoka One',cursive;font-size:18px;cursor:pointer;
+  transition:all .15s;
+}
+.write-btn:hover{border-color:var(--ink);}
+.best-row{text-align:center;font-size:13px;color:var(--hint);margin-top:.75rem;}
+</style>
+
+<div id="app">
+  <h2 class="sr-only">Memory card matching game — flip cards to find pairs.</h2>
+
+  <div class="top-bar">
+    <div class="game-title">Memory Flip!</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n" id="s-moves">0</div><div class="stat-l">moves</div></div>
+      <div class="stat"><div class="stat-n" id="s-pairs">0</div><div class="stat-l">pairs</div></div>
+      <div class="stat"><div class="stat-n" id="s-time">0s</div><div class="stat-l">time</div></div>
+    </div>
+  </div>
+
+  <div class="diff-row">
+    <span class="diff-label">difficulty:</span>
+    <button class="diff-btn active" data-d="8">easy (4x4)</button>
+    <button class="diff-btn" data-d="10">medium (5x4)</button>
+    <button class="diff-btn" data-d="18">hard (6x6)</button>
+  </div>
+
+  <div class="msg-bar" id="msg">flip two cards to find a pair!</div>
+  <div class="grid grid-4" id="grid"></div>
+  <div class="action-row">
+    <button class="restart-btn" id="restart-btn">restart</button>
+    <button class="write-btn" id="write-btn">open my journal</button>
+  </div>
+  <div class="best-row" id="best-row"></div>
+</div>
+
+<script>
+const EMOJIS = ['🌸','🦊','🍕','🚀','🎸','🐳','🌈','🦋','🍦','🎯','🐸','🌙','🔥','🎨','🍄','🦄','💎','🎭'];
+const BEST_KEY = 'memflip_best_v1';
+
+let pairs=8, cards=[], flipped=[], matched=0, moves=0, locked=false;
+let timerEl, elapsed=0, timerID=null, started=false, bests={8:null,10:null,18:null};
+
+async function loadBests(){
+  try{const r=await window.storage.get(BEST_KEY);if(r)bests=JSON.parse(r.value);}catch(e){}
+}
+async function saveBest(){
+  try{await window.storage.set(BEST_KEY,JSON.stringify(bests));}catch(e){}
+}
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function initGame(){
+  clearInterval(timerID);elapsed=0;moves=0;matched=0;flipped=[];locked=false;started=false;
+  document.getElementById('s-moves').textContent='0';
+  document.getElementById('s-pairs').textContent='0';
+  document.getElementById('s-time').textContent='0s';
+  document.getElementById('msg').textContent='flip two cards to find a pair!';
+
+  const pool=EMOJIS.slice(0,pairs);
+  cards=shuffle([...pool,...pool]).map((e,i)=>({id:i,emoji:e,state:'hidden'}));
+
+  const grid=document.getElementById('grid');
+  const cols = pairs===8?'grid-4':pairs===10?'grid-5':'grid-6';
+  grid.className='grid '+cols;
+  renderGrid();
+  updateBestRow();
+}
+
+function renderGrid(){
+  const grid=document.getElementById('grid');
+  grid.innerHTML=cards.map(c=>`
+    <div class="card-wrap${c.state==='flipped'?' flipped':c.state==='matched'?' matched':''}" data-id="${c.id}" onclick="flipCard(${c.id})">
+      <div class="card-inner">
+        <div class="card-face card-back"><div class="card-back-pattern"><i class="ti ti-star" aria-hidden="true" style="font-size:20px"></i></div></div>
+        <div class="card-face card-front">${c.emoji}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function flipCard(id){
+  if(locked)return;
+  const c=cards[id];
+  if(c.state!=='hidden')return;
+  if(!started){startTimer();started=true;}
+
+  c.state='flipped';
+  flipped.push(id);
+  renderGrid();
+
+  if(flipped.length===2){
+    moves++;
+    document.getElementById('s-moves').textContent=moves;
+    locked=true;
+    const [a,b]=flipped;
+    if(cards[a].emoji===cards[b].emoji){
+      setTimeout(()=>{
+        cards[a].state=cards[b].state='matched';
+        matched++;
+        flipped=[];locked=false;
+        document.getElementById('s-pairs').textContent=matched;
+        document.getElementById('msg').textContent=matched===pairs?'you won! all pairs found!':'nice match! keep going!';
+        renderGrid();
+        if(matched===pairs){
+          clearInterval(timerID);
+          checkBest();
+        }
+      },400);
+    } else {
+      const els=[document.querySelector(`[data-id="${a}"] .card-inner`),document.querySelector(`[data-id="${b}"] .card-inner`)];
+      els.forEach(e=>{if(e)e.parentElement.classList.add('wrong');});
+      document.getElementById('msg').textContent='not a match, try again!';
+      setTimeout(()=>{
+        cards[a].state=cards[b].state='hidden';
+        flipped=[];locked=false;
+        renderGrid();
+        document.getElementById('msg').textContent='flip two cards to find a pair!';
+      },800);
+    }
+  }
+}
+window.flipCard=flipCard;
+
+function startTimer(){
+  timerID=setInterval(()=>{
+    elapsed++;
+    document.getElementById('s-time').textContent=elapsed+'s';
+  },1000);
+}
+
+async function checkBest(){
+  const prev=bests[pairs];
+  if(prev===null||elapsed<prev.t||(elapsed===prev.t&&moves<prev.m)){
+    bests[pairs]={t:elapsed,m:moves};
+    await saveBest();
+    document.getElementById('msg').textContent=`you won in ${elapsed}s with ${moves} moves — new best!`;
+  } else {
+    document.getElementById('msg').textContent=`you won in ${elapsed}s with ${moves} moves!`;
+  }
+  updateBestRow();
+}
+
+function updateBestRow(){
+  const b=bests[pairs];
+  const el=document.getElementById('best-row');
+  if(b){el.textContent=`best for this difficulty: ${b.t}s in ${b.m} moves`;}
+  else{el.textContent='';}
+}
+
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    pairs=parseInt(btn.dataset.d);
+    initGame();
+  });
+});
+
+document.getElementById('restart-btn').addEventListener('click',initGame);
+document.getElementById('write-btn').addEventListener('click',()=>sendPrompt('open my journal'));
+
+loadBests().then(initGame);
+</script>
