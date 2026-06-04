@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Cupid's Love Maze</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated;}
+html,body{background:#1a0010;min-height:100vh;}
+
+.screen{display:none;font-family:'Press Start 2P',monospace;background:#1a0010;min-height:100vh;flex-direction:column;align-items:center;position:relative;overflow:hidden;}
+.screen.active{display:flex;}
+.screen::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,120,170,0.03) 0,rgba(255,120,170,0.03) 1px,transparent 1px,transparent 4px);pointer-events:none;z-index:0;}
+
+/* ── SCREEN 1: INTRO ── */
+#s-intro{padding:16px 12px 20px;gap:0;}
+#ic{border:3px solid #e879a0;box-shadow:0 0 0 3px #831843;display:block;z-index:2;}
+#dbox{width:336px;min-height:68px;background:#120008;border:3px solid #e879a0;padding:10px 13px 10px;position:relative;z-index:2;}
+#dbox::before{content:'';position:absolute;top:-11px;left:36px;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:11px solid #e879a0;}
+#spk{font-size:6px;color:#fde68a;margin-bottom:6px;}
+#dtxt{font-size:6px;color:#fbcfe8;line-height:2.3;min-height:34px;white-space:pre-wrap;}
+#dcur{display:inline-block;width:6px;height:11px;background:#e879a0;animation:bl .55s step-end infinite;margin-left:2px;vertical-align:middle;}
+@keyframes bl{50%{opacity:0;}}
+#crow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center;z-index:2;}
+.cbtn{font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 10px;background:#2d0020;color:#fbcfe8;border:2px solid #831843;cursor:pointer;}
+.cbtn:hover{background:#4c0030;border-color:#e879a0;color:#fde68a;}
+#nxtbtn{font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 14px;background:#2d0020;color:#f9a8d4;border:2px solid #e879a0;cursor:pointer;margin-top:10px;z-index:2;}
+#nxtbtn:hover{background:#4c0030;color:#fde68a;}
+
+/* ── SCREEN 2: MAZE ── */
+#s-maze{padding:14px 12px 20px;gap:0;}
+#hud{display:flex;gap:14px;font-size:6px;margin-bottom:8px;flex-wrap:wrap;justify-content:center;z-index:2;}
+.hl{color:#f9a8d4;}.hv{color:#fde68a;}
+#cv-wrap{border:3px solid #e879a0;box-shadow:0 0 0 3px #831843;z-index:2;}
+#gc{display:block;}
+#mmsg{font-size:6px;color:#fbcfe8;margin-top:8px;text-align:center;line-height:2.2;min-height:24px;z-index:2;}
+#mbtns{display:flex;gap:8px;margin-top:8px;z-index:2;}
+.lb{font-family:'Press Start 2P',monospace;font-size:6px;padding:6px 10px;background:#2d0020;color:#f9a8d4;border:2px solid #e879a0;cursor:pointer;}
+.lb:hover{background:#4c0030;color:#fde68a;}
+
+/* maze bgm bar */
+#bgm-bar{z-index:2;background:#120008;border:2px solid #ff3355;margin-top:10px;width:336px;padding:8px 10px;}
+#bgm-bar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+#bgm-label{font-size:5px;color:#fca5a5;}
+#bgm-track-name{font-size:5px;color:#fde68a;}
+#bgm-viz{height:28px;background:#0d0004;display:flex;align-items:flex-end;gap:2px;padding:2px;overflow:hidden;}
+.vbar{flex:1;background:#ff3355;min-height:2px;}
+#bgm-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.bgm-btn{font-family:'Press Start 2P',monospace;font-size:7px;background:#200008;color:#fca5a5;border:2px solid #aa1133;cursor:pointer;padding:4px 6px;line-height:1;}
+.bgm-btn:hover{background:#3d0010;color:#fff;}
+#bgm-vol{flex:1;height:3px;accent-color:#ff3355;cursor:pointer;}
+#bgm-status{font-size:4px;color:#ff6677;margin-top:4px;text-align:center;}
+
+/* ── SCREEN 3: MUSIC PLAYER ── */
+#s-player{padding:0;justify-content:flex-start;}
+#player-hero{width:100%;background:#e879a0;padding:20px 16px 16px;text-align:center;z-index:2;}
+#hero-title{font-size:10px;color:#fff;margin-bottom:6px;letter-spacing:1px;}
+#hero-sub{font-size:6px;color:#fce7f3;margin-bottom:4px;}
+#hero-congrats{font-size:5px;color:#fff0f6;}
+
+#player-body{width:100%;max-width:480px;z-index:2;padding:0 0 30px;}
+
+#album-section{display:flex;align-items:center;gap:14px;padding:16px 16px 0;}
+#album-art{width:100px;height:100px;background:#2d0020;border:3px solid #e879a0;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#album-art img{width:100%;height:100%;object-fit:cover;display:none;}
+#album-fb{font-size:32px;}
+#song-meta{flex:1;overflow:hidden;}
+#song-title{font-size:7px;color:#fde68a;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#song-artist{font-size:5px;color:#f9a8d4;margin-bottom:8px;}
+#now-playing-tag{font-size:4px;color:#e879a0;background:#2d0020;border:1px solid #e879a0;padding:3px 6px;display:inline-block;}
+
+#progress-section{padding:12px 16px 0;}
+#prog-bar{height:5px;background:#3d0030;cursor:pointer;position:relative;margin-bottom:4px;}
+#prog-fill{height:5px;background:#e879a0;width:0%;transition:width .4s linear;pointer-events:none;}
+#prog-handle{position:absolute;top:-4px;width:12px;height:12px;background:#fde68a;border:2px solid #e879a0;border-radius:50%;transform:translateX(-6px);transition:left .4s linear;pointer-events:none;}
+#time-row{display:flex;justify-content:space-between;font-size:5px;color:#f9a8d4;}
+
+#controls-section{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 16px 0;}
+.ctrl{font-family:'Press Start 2P',monospace;background:#120008;color:#f9a8d4;border:2px solid #831843;cursor:pointer;padding:7px 9px;font-size:8px;line-height:1;}
+.ctrl:hover{background:#2d0020;color:#fde68a;border-color:#e879a0;}
+#play-btn{font-size:13px;padding:9px 12px;border-color:#e879a0;color:#fde68a;}
+#shuffle-btn{font-size:7px;}
+#repeat-btn{font-size:7px;}
+.ctrl.active{border-color:#fde68a;color:#fde68a;}
+
+#vol-section{display:flex;align-items:center;gap:10px;padding:10px 16px 0;}
+#vol-icon{font-size:9px;color:#f9a8d4;cursor:pointer;}
+#vol-slider{flex:1;height:3px;accent-color:#e879a0;cursor:pointer;}
+#vol-val{font-size:5px;color:#f9a8d4;min-width:26px;text-align:right;}
+
+/* real audio viz */
+#audio-viz{padding:10px 16px 0;display:flex;align-items:flex-end;gap:2px;height:44px;}
+.avbar{flex:1;background:#e879a0;min-height:2px;opacity:0.7;}
+
+#tracklist-section{margin:12px 16px 0;border:2px solid #2d0020;}
+#tl-header{background:#2d0020;padding:6px 10px;font-size:5px;color:#f9a8d4;}
+#tl{max-height:180px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#831843 #1a0010;}
+.ti{display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-bottom:1px solid #1e0015;font-size:4px;}
+.ti:hover{background:#200015;}
+.ti.active{background:#3d0030;}
+.tn{color:#831843;min-width:16px;}.tt{color:#fbcfe8;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.tar{color:#f9a8d4;white-space:nowrap;}
+.ti.active .tt{color:#fde68a;}
+
+#spotify-section{padding:12px 16px 0;}
+#sp-btn{display:block;width:100%;font-family:'Press Start 2P',monospace;font-size:6px;background:#1DB954;color:#fff;border:none;padding:10px;cursor:pointer;text-decoration:none;text-align:center;}
+#sp-btn:hover{background:#1ed760;}
+
+#back-btn{font-family:'Press Start 2P',monospace;font-size:5px;padding:6px 10px;background:#2d0020;color:#f9a8d4;border:2px solid #831843;cursor:pointer;margin:10px 16px 0;display:inline-block;}
+#back-btn:hover{background:#4c0030;color:#fde68a;}
+
+/* floating hearts */
+#hearts-layer{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+.fh{position:absolute;bottom:-20px;font-size:14px;animation:fhup 2.5s ease-in forwards;}
+@keyframes fhup{0%{opacity:1;transform:translateY(0) scale(1);}100%{opacity:0;transform:translateY(-200px) scale(0.4);}}
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: INTRO -->
+<div class="screen active" id="s-intro">
+  <div id="hearts-layer" style="display:none;"></div>
+  <canvas id="ic" width="336" height="200"></canvas>
+  <div id="dbox">
+    <div id="spk">CUPID</div>
+    <div id="dtxt"><span id="dts"></span><span id="dcur"></span></div>
+  </div>
+  <div id="crow"></div>
+  <button id="nxtbtn" onclick="nextScene()">NEXT ▶</button>
+</div>
+
+<!-- SCREEN 2: MAZE -->
+<div class="screen" id="s-maze">
+  <div id="hud">
+    <span class="hl">STEPS</span><span class="hv" id="hs">0</span>
+    <span class="hl">LIVES</span><span class="hv" id="hh">♥♥♥</span>
+    <span class="hl">BEST</span><span class="hv" id="hbest">—</span>
+  </div>
+  <div id="cv-wrap"><canvas id="gc" width="336" height="336"></canvas></div>
+  <div id="mmsg">ARROW KEYS / WASD — REACH THE ♥ GIFT!</div>
+  <div id="mbtns">
+    <button class="lb" onclick="startMaze()">♥ RESTART</button>
+    <button class="lb" onclick="skipToPlayer()">SKIP ▶▶</button>
+  </div>
+
+  <div id="bgm-bar">
+    <div id="bgm-bar-top">
+      <span id="bgm-label">⚡ MAZE BGM</span>
+      <span id="bgm-track-name">CUPID'S CHASE</span>
+    </div>
+    <div id="bgm-viz"></div>
+    <div id="bgm-row">
+      <button class="bgm-btn" onclick="bgmPrev()">⏮</button>
+      <button class="bgm-btn" id="bgm-pb" onclick="toggleBgm()">▶</button>
+      <button class="bgm-btn" onclick="bgmNext()">⏭</button>
+      <input type="range" id="bgm-vol" min="0" max="100" value="60" step="1" oninput="setBgmVol(this.value)"/>
+    </div>
+    <div id="bgm-status">CLICK ▶ FOR INTENSE MUSIC</div>
+  </div>
+</div>
+
+<!-- SCREEN 3: MUSIC PLAYER -->
+<div class="screen" id="s-player">
+  <div id="player-hero">
+    <div id="hero-title">♥ CUPID'S PLAYLIST ♥</div>
+    <div id="hero-sub">my dearest, jasmine · by bien</div>
+    <div id="hero-congrats">YOU MADE IT THROUGH THE MAZE!</div>
+  </div>
+  <div id="player-body">
+    <div id="album-section">
+      <div id="album-art"><img id="aimg" src="" alt=""/><div id="album-fb">♥</div></div>
+      <div id="song-meta">
+        <div id="song-title">Kingston</div>
+        <div id="song-artist">Faye Webster</div>
+        <div id="now-playing-tag">♪ NOW PLAYING</div>
+      </div>
+    </div>
+
+    <div id="audio-viz"></div>
+
+    <div id="progress-section">
+      <div id="prog-bar" onclick="seekTrack(event)">
+        <div id="prog-fill"></div>
+        <div id="prog-handle" style="left:0%"></div>
+      </div>
+      <div id="time-row"><span id="tc">0:00</span><span id="td">3:30</span></div>
+    </div>
+
+    <div id="controls-section">
+      <button class="ctrl" id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle">⇄</button>
+      <button class="ctrl" onclick="prevTrack()">⏮</button>
+      <button class="ctrl" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="ctrl" onclick="nextTrack()">⏭</button>
+      <button class="ctrl" id="repeat-btn" onclick="toggleRepeat()" title="Repeat">↺</button>
+    </div>
+
+    <div id="vol-section">
+      <span id="vol-icon" onclick="toggleMute()">♪</span>
+      <input type="range" id="vol-slider" min="0" max="100" value="80" step="1" oninput="setVol(this.value)"/>
+      <span id="vol-val">80</span>
+    </div>
+
+    <div id="tracklist-section">
+      <div id="tl-header">♥ TRACKLIST — 23 SONGS</div>
+      <div id="tl"></div>
+    </div>
+
+    <div id="spotify-section">
+      <a id="sp-btn" href="https://open.spotify.com/playlist/7KGLOl9cUGlaDKArLAe65Z" target="_blank">▶ OPEN FULL PLAYLIST IN SPOTIFY</a>
+    </div>
+
+    <button id="back-btn" onclick="goToMaze()">← PLAY MAZE AGAIN</button>
+  </div>
+</div>
+
+<script>
+const TRACKS=[
+  {t:"Kingston",a:"Faye Webster",i:"ab67616d00004851ac4ebd092fa2cf210e4c8023",dur:193},
+  {t:"Neu Roses (Transgressor's Song)",a:"Daniel Caesar",i:"ab67616d000048517aa8783ad8def37cc548a9cf",dur:214},
+  {t:"All I Really Want Is You",a:"The Mar\u00edas",i:"ab67616d00004851657d6776f64aa731c8d1748b",dur:228},
+  {t:"The Most Beautiful Thing",a:"Bruno Major",i:"ab67616d0000485195998c6ca2c759356eee3c3b",dur:243},
+  {t:"Nobody New",a:"The Mar\u00edas",i:"ab67616d00004851a66ab2cbaebcc84ddd45a078",dur:208},
+  {t:"My Love Mine All Mine",a:"Mitski",i:"ab67616d000048514e549e50bad2fe59df943c97",dur:177},
+  {t:"I Don't Wanna Be Okay Without You",a:"Charlie Burg",i:"ab67616d00004851c699d66824a938624c44c2b7",dur:196},
+  {t:"In A Good Way",a:"Faye Webster",i:"ab67616d000048513528b18d761e6c3d6dfd55d6",dur:222},
+  {t:"Who are you?",a:"Saga Faye",i:"ab67616d000048513484239e39cde74c74d69888",dur:184},
+  {t:"still love you (todav\u00eda)",a:"The Two Lips",i:"ab67616d0000485164d1be1a04b30d4251c8dbfb",dur:189},
+  {t:"Nothin' Without You",a:"Hangsung",i:"ab67616d00004851f9d4e66989bed6fba67cbec2",dur:201},
+  {t:"wave",a:"wave to earth",i:"ab67616d000048513484239e39cde74c74d69888",dur:218},
+  {t:"bird",a:"wave to earth",i:"ab67616d00004851ee461c1dff39922128089519",dur:197},
+  {t:"(Only) About Love - Demo",a:"grentperez",i:"ab67616d00004851deb94b2957cbe7429a23f85c",dur:211},
+  {t:"Loose",a:"Daniel Caesar",i:"ab67616d000048517aa8783ad8def37cc548a9cf",dur:235},
+  {t:"Nobody Else",a:"Midday Wednesday",i:"ab67616d00004851b5bed89c545f17bf4732ceef",dur:206},
+  {t:"BEAUTiFUL",a:"Paul Partohap",i:"ab67616d00004851b0405be46c5cae86051ce4e5",dur:224},
+  {t:"Silver Lining",a:"grentperez",i:"ab67616d000048514061f6965ab6f93fb0740b16",dur:199},
+  {t:"Still",a:"Jeff Bernat",i:"ab67616d0000485149bfa64a9446e5af24df08f7",dur:231},
+  {t:"Aura",a:"IV OF SPADES",i:"ab67616d00004851294985e6269d78f98b1dada1",dur:245},
+  {t:"Afford You",a:"Amaria",i:"ab67616d00004851d3cc0334c56c812542fa188c",dur:187},
+  {t:"Everything I Know About Love",a:"Laufey",i:"ab67616d0000485148341e864d4b4881f56f01b4",dur:216},
+  {t:"ONLY",a:"LEEHI",i:"ab67616d00004851d5d11b6ac4242aaa41c8be69",dur:203},
+];
+
+/* ═══ SCREEN MANAGER ═══ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ═══ INTRO ═══ */
+const SCENES=[
+  {spk:"CUPID",txt:"Oh great. Another human who thinks\nlove is a MAZE.",mood:"annoyed"},
+  {spk:"CUPID",txt:"*trips on own wings*\nI'm FINE. This is fine.",mood:"falling"},
+  {spk:"CUPID",txt:"Look... I was SUPPOSED to shoot you\nwith an arrow but... I ATE TOO MANY\nCOOKIES. My aim is completely off.",mood:"guilty"},
+  {spk:"CUPID",txt:"Last week I made a guy fall in love\nwith a PARKING METER.\nDon't ask about the lamp post.",mood:"sweat"},
+  {spk:"YOU",txt:"...Should I be worried?",mood:"scared"},
+  {spk:"CUPID",txt:"WORRIED?! Pffft. No no no.\nJust complete this love maze\nand I'll sort everything out.",mood:"nervous",choices:[{l:"I WON'T FAIL",n:6},{l:"HOW BAD CAN IT BE",n:7}]},
+  {spk:"CUPID",txt:"You won't! Probably. Maybe.\nI have snacks if you do.",mood:"shrug",jump:8},
+  {spk:"CUPID",txt:"Bad. VERY bad. Remember the\nparking meter guy? Yeah.\nDon't ask about the lamp post.",mood:"panic",jump:8},
+  {spk:"CUPID",txt:"Anyway! The love of your life is\nwaiting at the end. Or a really\nnice gift basket. Same thing.",mood:"happy"},
+  {spk:"CUPID",txt:"I put some good songs in there too.\nYou're welcome. NOW GO.\nMy wings are ASLEEP.",mood:"sleepy",last:true},
+];
+let si=0,typeIv=null,typed=0,curTxt='',choiceW=false,iraf=null;
+const ic=document.getElementById('ic'),ictx=ic.getContext('2d');
+
+function drawIntro(){
+  const mood=SCENES[si]?SCENES[si].mood:'happy';
+  ictx.fillStyle='#1a0010';ictx.fillRect(0,0,336,200);
+  for(let r=0;r<13;r++)for(let c=0;c<21;c++){ictx.fillStyle=(r+c)%2===0?'#1f0014':'#1a0010';ictx.fillRect(c*16,r*16,16,16);}
+  drawCupidSpr(mood);drawYouSpr(mood==='scared');
+  if(mood==='falling'){ictx.fillStyle='#fde68a';ictx.font="6px 'Press Start 2P',monospace";ictx.textAlign='left';ictx.textBaseline='top';ictx.fillText('WHOOPS!!',52,18);}
+  if(mood==='sweat'){ictx.fillStyle='#93c5fd';ictx.font="6px 'Press Start 2P',monospace";ictx.textAlign='center';ictx.textBaseline='top';ictx.fillText('*sweating*',100,14);}
+  if(mood==='sleepy'){ictx.fillStyle='#c4b5fd';ictx.font="8px 'Press Start 2P',monospace";ictx.textAlign='center';ictx.textBaseline='top';ictx.fillText('z z Z',120,10);}
+}
+function drawCupidSpr(mood){
+  const c=ictx,x=100,y=110;
+  const bob=mood==='falling'?18:0;
+  c.save();c.translate(x,y+bob);if(mood==='falling')c.rotate(0.28);
+  c.fillStyle='#fde68a';c.fillRect(-18,-44,10,16);c.fillRect(8,-44,10,16);
+  c.fillStyle='#e879a0';c.fillRect(-20,-56,12,14);c.fillRect(8,-56,12,14);
+  c.fillStyle='#fbcfe8';c.fillRect(-12,-74,24,24);
+  c.fillStyle='#e879a0';c.fillRect(-6,-70,12,10);
+  c.fillStyle='#1c1917';
+  if(mood==='happy'||mood==='shrug'){c.fillRect(-4,-66,4,4);c.fillRect(3,-66,4,4);}
+  else if(mood==='nervous'||mood==='panic'){c.fillStyle='#fff';c.fillRect(-5,-68,5,5);c.fillRect(2,-68,5,5);c.fillStyle='#1c1917';c.fillRect(-4,-66,3,3);c.fillRect(3,-66,3,3);}
+  else{c.fillRect(-4,-66,4,4);c.fillRect(3,-66,4,4);}
+  if(mood==='annoyed'||mood==='guilty')c.fillRect(-6,-72,16,3);
+  c.fillStyle='#e879a0';
+  if(mood==='happy')c.fillRect(-4,-60,10,3);
+  else if(mood==='annoyed'||mood==='guilty')c.fillRect(-3,-59,8,2);
+  else if(mood==='nervous'||mood==='panic'){c.fillRect(-4,-60,4,2);c.fillRect(2,-58,4,2);}
+  else c.fillRect(-3,-59,8,2);
+  c.fillStyle='#fbcfe8';c.fillRect(-14,-50,10,20);c.fillRect(4,-50,10,20);
+  c.fillStyle='#e879a0';c.fillRect(-10,-30,20,28);
+  c.fillStyle='#fbcfe8';c.fillRect(-12,0,8,16);c.fillRect(4,0,8,16);
+  if(mood==='shrug'){c.fillStyle='#fbcfe8';c.fillRect(-22,-40,8,6);c.fillRect(14,-40,8,6);}
+  c.fillStyle='#fde68a';c.fillRect(-28,-54,5,28);
+  c.fillStyle='#e879a0';c.fillRect(-28,-66,5,4);c.fillStyle='#fde68a';c.fillRect(-36,-64,10,5);
+  c.restore();
+}
+function drawYouSpr(scared){
+  const c=ictx,x=240,y=112;
+  c.fillStyle='#fbcfe8';c.fillRect(x-9,y-52,18,18);
+  c.fillStyle='#1c1917';
+  if(scared){c.fillStyle='#fff';c.fillRect(x-5,y-49,5,5);c.fillRect(x+2,y-49,5,5);c.fillStyle='#1c1917';c.fillRect(x-4,y-47,3,3);c.fillRect(x+3,y-47,3,3);c.fillStyle='#e879a0';c.fillRect(x-3,y-41,9,2);}
+  else{c.fillRect(x-3,y-47,4,4);c.fillRect(x+2,y-47,4,4);c.fillStyle='#e879a0';c.fillRect(x-2,y-41,8,2);}
+  c.fillStyle='#f9a8d4';c.fillRect(x-11,y-34,22,22);
+  c.fillStyle='#fde68a';c.fillRect(x-8,y-68,16,17);
+  c.fillStyle='#fbcfe8';c.fillRect(x-9,y-12,7,18);c.fillRect(x+2,y-12,7,18);
+  c.fillStyle='#f9a8d4';c.fillRect(x-7,y+6,7,14);c.fillRect(x,y+6,7,14);
+  c.fillStyle='#fde68a';c.font="bold 8px 'Press Start 2P',monospace";c.textAlign='center';c.textBaseline='middle';c.fillText('?',x+22,y-60);
+}
+
+function typeText(txt,cb){
+  clearInterval(typeIv);typed=0;curTxt=txt;
+  document.getElementById('dts').textContent='';
+  typeIv=setInterval(()=>{typed++;document.getElementById('dts').textContent=curTxt.slice(0,typed);if(typed>=curTxt.length){clearInterval(typeIv);if(cb)cb();}},36);
+}
+function showScene(idx){
+  if(idx>=SCENES.length){launchMaze();return;}
+  si=idx;const s=SCENES[idx];
+  document.getElementById('spk').textContent=s.spk||'YOU';
+  document.getElementById('crow').innerHTML='';
+  document.getElementById('nxtbtn').style.display='block';
+  choiceW=false;
+  typeText(s.txt,()=>{
+    if(s.choices&&s.choices.length){
+      choiceW=true;const cr=document.getElementById('crow');
+      s.choices.forEach(ch=>{const b=document.createElement('button');b.className='cbtn';b.textContent=ch.l;b.onclick=()=>showScene(ch.n);cr.appendChild(b);});
+      document.getElementById('nxtbtn').style.display='none';
+    }
+  });
+}
+function nextScene(){
+  if(typed<curTxt.length){
+    clearInterval(typeIv);typed=curTxt.length;document.getElementById('dts').textContent=curTxt;
+    const s=SCENES[si];
+    if(s.choices&&s.choices.length){choiceW=true;const cr=document.getElementById('crow');cr.innerHTML='';s.choices.forEach(ch=>{const b=document.createElement('button');b.className='cbtn';b.textContent=ch.l;b.onclick=()=>showScene(ch.n);cr.appendChild(b);});document.getElementById('nxtbtn').style.display='none';}
+    return;
+  }
+  if(choiceW)return;
+  const s=SCENES[si];
+  if(s.last){launchMaze();return;}
+  showScene(s.jump!==undefined?s.jump:si+1);
+}
+function animIntro(){drawIntro();iraf=requestAnimationFrame(animIntro);}
+function launchMaze(){
+  cancelAnimationFrame(iraf);
+  showScreen('s-maze');
+  startMaze();
+  buildViz();
+}
+
+/* ═══ WEB AUDIO BGM ═══ */
+let actx=null,bgmNodes=[],bgmPlaying=false,bgmVol=0.6,bgmIdx=0,bgmTimeout=null;
+const BGM=[
+  {name:"CUPID'S CHASE",bpm:160,type:'minor'},
+  {name:"HEART DUNGEON",bpm:142,type:'dungeon'},
+  {name:"LOVE PANIC",bpm:180,type:'panic'},
+];
+function initAudio(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();}
+function stopBgm(){bgmNodes.forEach(n=>{try{n.stop(0);}catch(e){}});bgmNodes=[];if(bgmTimeout)clearTimeout(bgmTimeout);}
+function note(type,freq,start,dur,vol,det=0){
+  if(!actx)return;
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type=type;o.frequency.value=freq;if(det)o.detune.value=det;
+  g.gain.setValueAtTime(vol,start);g.gain.exponentialRampToValueAtTime(0.0001,start+dur);
+  o.connect(g);g.connect(actx.destination);
+  o.start(start);o.stop(start+dur+0.06);bgmNodes.push(o);
+}
+function playBgm(){
+  stopBgm();
+  const cfg=BGM[bgmIdx],beat=60/cfg.bpm,bars=14,beats=bars*4;
+  const now=actx.currentTime,v=bgmVol*0.14;
+  const sc=[0,2,3,5,7,8,10],roots=[146.83,130.81,123.47,110,138.59];
+  for(let b=0;b<beats;b++){
+    const bt=now+b*beat;
+    if(b%2===0)note('square',55+(cfg.type==='panic'?Math.random()*3:0),bt,beat*0.38,v*2.6);
+    note('square',220,bt,beat*0.12,v*0.5);
+    if(b%4===2)note('sawtooth',110,bt,beat*0.46,v*1.5);
+    if(cfg.type==='panic'&&b%3===0)note('square',440,bt,beat*0.07,v*0.35);
+    const ri=b%8;
+    if([0,3,5,6].includes(ri)){
+      const root=roots[Math.floor(b/8)%roots.length];
+      const semi=sc[ri%sc.length];
+      const freq=root*Math.pow(2,semi/12);
+      const d=cfg.type==='dungeon'?beat*3:beat*2;
+      note('triangle',freq,bt,d,v*1.3);
+      if(cfg.type!=='minor')note('sine',freq*2,bt,d*0.7,v*0.6,cfg.type==='panic'?8:0);
+    }
+    if(cfg.type==='dungeon'&&b%8===0)note('sawtooth',73.4,bt,beat*3.5,v*1.0);
+  }
+  bgmPlaying=true;
+  document.getElementById('bgm-pb').textContent='⏸';
+  document.getElementById('bgm-track-name').textContent=BGM[bgmIdx].name;
+  document.getElementById('bgm-status').textContent='PLAYING — '+BGM[bgmIdx].bpm+' BPM';
+  bgmTimeout=setTimeout(()=>{if(bgmPlaying)playBgm();},beats*beat*1000-120);
+}
+function toggleBgm(){
+  initAudio();
+  if(!bgmPlaying){playBgm();}
+  else{stopBgm();bgmPlaying=false;document.getElementById('bgm-pb').textContent='▶';document.getElementById('bgm-status').textContent='PAUSED';}
+}
+function bgmNext(){bgmIdx=(bgmIdx+1)%BGM.length;if(bgmPlaying){initAudio();playBgm();}else document.getElementById('bgm-track-name').textContent=BGM[bgmIdx].name;}
+function bgmPrev(){bgmIdx=(bgmIdx-1+BGM.length)%BGM.length;if(bgmPlaying){initAudio();playBgm();}else document.getElementById('bgm-track-name').textContent=BGM[bgmIdx].name;}
+function setBgmVol(v){bgmVol=v/100;}
+
+let vizBars=[],vizRaf=null;
+function buildViz(){
+  const viz=document.getElementById('bgm-viz');viz.innerHTML='';vizBars=[];
+  for(let i=0;i<22;i++){const b=document.createElement('div');b.className='vbar';b.style.height='2px';viz.appendChild(b);vizBars.push(b);}
+  function anim(){
+    const t=Date.now()*0.004;
+    vizBars.forEach((b,i)=>{
+      const h=bgmPlaying?(Math.abs(Math.sin(t*2.4+i*0.6+bgmIdx*0.7))*20+Math.abs(Math.cos(t*1.1+i))*6+2):2;
+      b.style.height=Math.round(h)+'px';
+      b.style.background=bgmPlaying?'rgb('+(Math.min(255,160+Math.round(h*4)))+',40,60)':'#ff3355';
+    });
+    vizRaf=requestAnimationFrame(anim);
+  }
+  anim();
+}
+
+/* ═══ MAZE ═══ */
+const COLS=21,ROWS=21,CELL=16;
+const MC=document.getElementById('gc');
+const mctx=MC.getContext('2d');
+let maze,player,exitPos,msteps,mlives,mwon,mtick,mblink,mraf,mBest=null;
+
+function genMaze(){
+  const g=Array.from({length:ROWS},()=>Array(COLS).fill(1));
+  const st=[{r:1,c:1}];g[1][1]=0;
+  const D=[{r:-2,c:0},{r:2,c:0},{r:0,c:-2},{r:0,c:2}];
+  while(st.length){
+    const cur=st[st.length-1];
+    const sh=D.map(d=>({...d,o:Math.random()})).sort((a,b)=>a.o-b.o);
+    let mv=false;
+    for(const d of sh){const nr=cur.r+d.r,nc=cur.c+d.c;
+      if(nr>0&&nr<ROWS-1&&nc>0&&nc<COLS-1&&g[nr][nc]===1){g[cur.r+d.r/2][cur.c+d.c/2]=0;g[nr][nc]=0;st.push({r:nr,c:nc});mv=true;break;}}
+    if(!mv)st.pop();
+  }
+  return g;
+}
+function startMaze(){
+  msteps=0;mlives=3;mwon=false;mtick=0;mblink=0;
+  maze=genMaze();
+  const ps=[];for(let r=1;r<ROWS-1;r++)for(let c=1;c<COLS-1;c++)if(maze[r][c]===0)ps.push({r,c});
+  player={r:1,c:1};
+  exitPos=ps.reduce((b,p)=>(Math.abs(p.r-1)+Math.abs(p.c-1))>(Math.abs(b.r-1)+Math.abs(b.c-1))?p:b,ps[0]);
+  setMsg('ARROW KEYS / WASD \u2014 REACH THE \u2665 GIFT!');
+  updHUD();if(mraf)cancelAnimationFrame(mraf);mloop();
+}
+function updHUD(){
+  document.getElementById('hs').textContent=msteps;
+  document.getElementById('hh').textContent='\u2665'.repeat(Math.max(0,mlives));
+  document.getElementById('hbest').textContent=mBest!==null?mBest:'—';
+}
+function setMsg(t){document.getElementById('mmsg').textContent=t;}
+function mloop(){mtick++;mblink++;drawMaze();if(!mwon)mraf=requestAnimationFrame(mloop);}
+const WC=['#2d0020','#3d0030','#4a0038'];
+function drawMaze(){
+  mctx.fillStyle='#1a0010';mctx.fillRect(0,0,336,336);
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const x=c*CELL,y=r*CELL;
+    if(maze[r][c]===1){
+      mctx.fillStyle=WC[Math.abs(r*5+c*7)%3];mctx.fillRect(x,y,CELL,CELL);
+      mctx.fillStyle='#e879a0';mctx.fillRect(x,y,CELL,2);
+    }else{
+      mctx.fillStyle=(r+c)%2===0?'#120008':'#180010';mctx.fillRect(x,y,CELL,CELL);
+    }
+  }
+  const ex=exitPos,ex_x=ex.c*CELL,ex_y=ex.r*CELL;
+  const bc=['#e879a0','#f9a8d4','#fde68a'][Math.floor(mblink/7)%3];
+  mctx.fillStyle=bc+'55';mctx.fillRect(ex_x-1,ex_y-1,CELL+2,CELL+2);
+  mctx.fillStyle=bc;mctx.font="bold 11px 'Press Start 2P',monospace";
+  mctx.textAlign='center';mctx.textBaseline='middle';mctx.fillText('\u2665',ex_x+8,ex_y+9);
+  const px=player.c*CELL,py=player.r*CELL;
+  mctx.fillStyle='#831843';mctx.fillRect(px+3,py+12,10,3);
+  mctx.fillStyle='#f9a8d4';mctx.fillRect(px+4,py+8,8,7);mctx.fillRect(px+5,py+4,6,5);
+  mctx.fillStyle='#fde68a';mctx.fillRect(px+5,py+2,6,4);
+  mctx.fillStyle='#1c1917';mctx.fillRect(px+6,py+4,2,2);mctx.fillRect(px+9,py+4,2,2);
+  mctx.fillStyle='#f9a8d4';mctx.fillRect(px+2,py+8,3,5);mctx.fillRect(px+11,py+8,3,5);
+}
+function handleWin(){
+  mwon=true;cancelAnimationFrame(mraf);
+  if(mBest===null||msteps<mBest)mBest=msteps;
+  stopBgm();bgmPlaying=false;document.getElementById('bgm-pb').textContent='▶';
+  setMsg('\u2665 YOU FOUND LOVE! Loading reward...');
+  spawnMazeHearts();
+  setTimeout(goToPlayer,1000);
+}
+function skipToPlayer(){if(mwon)return;stopBgm();bgmPlaying=false;goToPlayer();}
+function goToPlayer(){
+  showScreen('s-player');
+  buildTL();loadTrack(0);
+  buildPlayerViz();
+}
+function goToMaze(){
+  stopPlayerTimer();showScreen('s-maze');startMaze();
+}
+
+document.addEventListener('keydown',e=>{
+  const m={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1],KeyW:[-1,0],KeyS:[1,0],KeyA:[0,-1],KeyD:[0,1]};
+  if(!m[e.code])return;e.preventDefault();
+  if(!document.getElementById('s-maze').classList.contains('active')||mwon)return;
+  const [dr,dc]=m[e.code];
+  const nr=player.r+dr,nc=player.c+dc;
+  if(nr<0||nr>=ROWS||nc<0||nc>=COLS||maze[nr][nc]!==0)return;
+  player.r=nr;player.c=nc;msteps++;updHUD();
+  if(player.r===exitPos.r&&player.c===exitPos.c)handleWin();
+});
+
+/* hearts on maze win */
+function spawnMazeHearts(){
+  const hl=document.getElementById('hearts-layer');hl.style.display='block';hl.innerHTML='';
+  const ems=['♥','♡','★','✿'];
+  const cols=['#e879a0','#fde68a','#fbcfe8','#f9a8d4'];
+  for(let i=0;i<20;i++){
+    const s=document.createElement('span');s.className='fh';
+    s.textContent=ems[i%ems.length];s.style.left=Math.random()*100+'%';
+    s.style.color=cols[i%cols.length];s.style.animationDelay=(Math.random()*0.8)+'s';
+    hl.appendChild(s);
+  }
+  setTimeout(()=>{hl.style.display='none';hl.innerHTML='';},3000);
+}
+
+/* ═══ MUSIC PLAYER ═══ */
+let curTrack=0,isPlaying=false,progTimer=null,elapsed=0,shuffle=false,repeat=false,muted=false,volPct=80;
+let pVizBars=[],pVizRaf=null;
+
+function buildTL(){
+  const tl=document.getElementById('tl');tl.innerHTML='';
+  TRACKS.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='ti'+(i===0?' active':'');
+    d.innerHTML='<span class="tn">'+(i+1)+'</span><span class="tt">'+t.t+'</span><span class="tar">'+t.a+'</span>';
+    d.onclick=()=>{loadTrack(i);startPlay();};tl.appendChild(d);
+  });
+}
+function fmtTime(s){const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+function loadTrack(i){
+  curTrack=i;elapsed=0;isPlaying=false;
+  clearInterval(progTimer);
+  const t=TRACKS[i];
+  document.getElementById('song-title').textContent=t.t;
+  document.getElementById('song-artist').textContent=t.a;
+  document.getElementById('play-btn').textContent='▶';
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('prog-handle').style.left='0%';
+  document.getElementById('tc').textContent='0:00';
+  document.getElementById('td').textContent=fmtTime(t.dur);
+  const img=document.getElementById('aimg'),fb=document.getElementById('album-fb');
+  img.style.display='none';fb.style.display='block';
+  img.onload=()=>{img.style.display='block';fb.style.display='none';};
+  img.onerror=()=>{img.style.display='none';fb.style.display='block';};
+  img.src='https://i.scdn.co/image/'+t.i;
+  document.querySelectorAll('.ti').forEach((el,idx)=>el.classList.toggle('active',idx===i));
+  const active=document.querySelector('.ti.active');
+  if(active)active.scrollIntoView({block:'nearest'});
+}
+function startPlay(){
+  if(isPlaying)return;
+  isPlaying=true;document.getElementById('play-btn').textContent='⏸';
+  const dur=TRACKS[curTrack].dur;
+  progTimer=setInterval(()=>{
+    elapsed++;
+    const pct=Math.min((elapsed/dur)*100,100);
+    document.getElementById('prog-fill').style.width=pct+'%';
+    document.getElementById('prog-handle').style.left=pct+'%';
+    document.getElementById('tc').textContent=fmtTime(elapsed);
+    if(elapsed>=dur){clearInterval(progTimer);onTrackEnd();}
+  },1000);
+}
+function pausePlay(){
+  isPlaying=false;document.getElementById('play-btn').textContent='▶';clearInterval(progTimer);
+}
+function stopPlayerTimer(){isPlaying=false;clearInterval(progTimer);}
+function togglePlay(){if(isPlaying)pausePlay();else startPlay();}
+function onTrackEnd(){
+  if(repeat){elapsed=0;startPlay();return;}
+  nextTrack();
+}
+function nextTrack(){
+  let n;
+  if(shuffle)n=Math.floor(Math.random()*TRACKS.length);
+  else n=(curTrack+1)%TRACKS.length;
+  loadTrack(n);startPlay();
+}
+function prevTrack(){
+  if(elapsed>3){elapsed=0;startPlay();return;}
+  let n=(curTrack-1+TRACKS.length)%TRACKS.length;
+  loadTrack(n);startPlay();
+}
+function toggleShuffle(){shuffle=!shuffle;document.getElementById('shuffle-btn').classList.toggle('active',shuffle);}
+function toggleRepeat(){repeat=!repeat;document.getElementById('repeat-btn').classList.toggle('active',repeat);}
+function toggleMute(){muted=!muted;document.getElementById('vol-icon').textContent=muted?'🔇':'♪';}
+function setVol(v){volPct=v;document.getElementById('vol-val').textContent=v;}
+function seekTrack(e){
+  const bar=document.getElementById('prog-bar');
+  const pct=Math.max(0,Math.min(1,e.offsetX/bar.offsetWidth));
+  elapsed=Math.floor(pct*TRACKS[curTrack].dur);
+  document.getElementById('prog-fill').style.width=(pct*100)+'%';
+  document.getElementById('prog-handle').style.left=(pct*100)+'%';
+  document.getElementById('tc').textContent=fmtTime(elapsed);
+}
+function buildPlayerViz(){
+  const viz=document.getElementById('audio-viz');viz.innerHTML='';pVizBars=[];
+  for(let i=0;i<28;i++){const b=document.createElement('div');b.className='avbar';b.style.height='2px';viz.appendChild(b);pVizBars.push(b);}
+  function anim(){
+    const t=Date.now()*0.003;
+    pVizBars.forEach((b,i)=>{
+      const h=isPlaying?(Math.abs(Math.sin(t*1.8+i*0.5))*28+Math.abs(Math.cos(t*2.3+i*0.9))*12+3):2;
+      b.style.height=Math.round(h)+'px';
+      b.style.opacity=isPlaying?(0.5+Math.abs(Math.sin(t+i*0.4))*0.5).toFixed(2):'0.3';
+    });
+    pVizRaf=requestAnimationFrame(anim);
+  }
+  if(pVizRaf)cancelAnimationFrame(pVizRaf);
+  anim();
+}
+
+showScene(0);animIntro();
+</script>
+</body>
+</html>
