@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Cupid's Love Maze ♥</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated;}
+html,body{background:#1a0010;min-height:100vh;}
+.screen{display:none;font-family:'Press Start 2P',monospace;background:#1a0010;min-height:100vh;flex-direction:column;align-items:center;position:relative;overflow:hidden;}
+.screen.active{display:flex;}
+.screen::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,120,170,0.03) 0,rgba(255,120,170,0.03) 1px,transparent 1px,transparent 4px);pointer-events:none;z-index:0;}
+
+/* ── INTRO ── */
+#s-intro{padding:16px 12px 20px;gap:0;}
+#ic{border:3px solid #e879a0;box-shadow:0 0 0 3px #831843;display:block;z-index:2;}
+#dbox{width:336px;min-height:68px;background:#120008;border:3px solid #e879a0;padding:10px 13px;position:relative;z-index:2;}
+#dbox::before{content:'';position:absolute;top:-11px;left:36px;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:11px solid #e879a0;}
+#spk{font-size:6px;color:#fde68a;margin-bottom:6px;}
+#dtxt{font-size:6px;color:#fbcfe8;line-height:2.3;min-height:34px;white-space:pre-wrap;}
+#dcur{display:inline-block;width:6px;height:11px;background:#e879a0;animation:bl .55s step-end infinite;margin-left:2px;vertical-align:middle;}
+@keyframes bl{50%{opacity:0;}}
+#crow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center;z-index:2;}
+.cbtn{font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 10px;background:#2d0020;color:#fbcfe8;border:2px solid #831843;cursor:pointer;}
+.cbtn:hover{background:#4c0030;border-color:#e879a0;color:#fde68a;}
+#nxtbtn{font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 14px;background:#2d0020;color:#f9a8d4;border:2px solid #e879a0;cursor:pointer;margin-top:10px;z-index:2;}
+#nxtbtn:hover{background:#4c0030;color:#fde68a;}
+
+/* ── MAZE ── */
+#s-maze{padding:10px 12px 16px;gap:0;}
+#hud{display:flex;gap:10px;font-size:6px;margin-bottom:6px;flex-wrap:wrap;justify-content:center;z-index:2;}
+.hl{color:#f9a8d4;}.hv{color:#fde68a;}
+#timer-bar{width:336px;height:6px;background:#2d0020;margin-bottom:6px;z-index:2;position:relative;}
+#timer-fill{height:6px;background:#e879a0;width:100%;transition:width .1s linear;}
+#cv-wrap{border:3px solid #e879a0;box-shadow:0 0 0 3px #831843;z-index:2;position:relative;}
+#gc{display:block;}
+#mmsg{font-size:6px;color:#fbcfe8;margin-top:6px;text-align:center;line-height:2;min-height:22px;z-index:2;}
+#mbtns{display:flex;gap:8px;margin-top:6px;z-index:2;}
+.lb{font-family:'Press Start 2P',monospace;font-size:6px;padding:6px 10px;background:#2d0020;color:#f9a8d4;border:2px solid #e879a0;cursor:pointer;}
+.lb:hover{background:#4c0030;color:#fde68a;}
+#level-badge{font-size:5px;background:#831843;color:#fde68a;padding:3px 8px;margin-bottom:4px;z-index:2;}
+
+/* ghost hit flash */
+#hit-flash{position:absolute;inset:0;background:rgba(255,0,60,0.35);pointer-events:none;z-index:3;opacity:0;transition:opacity .08s;}
+
+/* ── WIN SCREEN ── */
+#s-win{padding:0;justify-content:flex-start;overflow-y:auto;}
+#win-canvas{position:absolute;top:0;left:0;pointer-events:none;z-index:1;}
+#win-body{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;padding:20px 16px 30px;width:100%;max-width:440px;}
+#win-title{font-size:11px;color:#fde68a;text-align:center;margin-bottom:4px;text-shadow:0 0 12px #e879a0;}
+#win-subtitle{font-size:6px;color:#f9a8d4;text-align:center;margin-bottom:16px;}
+#cupid-win-wrap{margin-bottom:12px;}
+#win-grade{font-size:36px;text-align:center;margin:4px 0;filter:drop-shadow(0 0 8px #e879a0);}
+#win-grade-label{font-size:6px;color:#fbcfe8;text-align:center;margin-bottom:12px;}
+#win-stats{background:#120008;border:2px solid #e879a0;width:100%;padding:10px 14px;margin-bottom:12px;}
+.wstat{display:flex;justify-content:space-between;font-size:6px;padding:5px 0;border-bottom:1px solid #2d0020;}
+.wstat:last-child{border-bottom:none;}
+.wstat-l{color:#f9a8d4;}.wstat-r{color:#fde68a;}
+#win-total{font-size:8px;color:#fde68a;text-align:center;margin:8px 0 12px;padding:8px;background:#2d0020;border:2px solid #fde68a;width:100%;}
+#win-cupid-msg{font-size:6px;color:#fbcfe8;text-align:center;line-height:2.2;margin-bottom:14px;background:#120008;border:2px solid #e879a0;padding:10px 12px;width:100%;}
+.win-btn{font-family:'Press Start 2P',monospace;font-size:6px;padding:8px 14px;background:#2d0020;color:#f9a8d4;border:2px solid #e879a0;cursor:pointer;margin:4px;}
+.win-btn:hover{background:#4c0030;color:#fde68a;}
+.win-btn.primary{background:#e879a0;color:#fff;border-color:#fff;}
+.win-btn.primary:hover{background:#c9527a;}
+
+/* ── MUSIC PLAYER ── */
+#s-player{padding:0;justify-content:flex-start;overflow-y:auto;}
+#player-hero{width:100%;background:#e879a0;padding:18px 16px 14px;text-align:center;z-index:2;}
+#hero-title{font-size:9px;color:#fff;margin-bottom:5px;}
+#hero-sub{font-size:5px;color:#fce7f3;margin-bottom:3px;}
+#hero-congrats{font-size:5px;color:#fff0f6;}
+#player-body{width:100%;max-width:480px;z-index:2;padding:0 0 30px;}
+#album-section{display:flex;align-items:center;gap:14px;padding:14px 16px 0;}
+#album-art{width:96px;height:96px;background:#2d0020;border:3px solid #e879a0;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#album-art img{width:100%;height:100%;object-fit:cover;display:none;}
+#album-fb{font-size:30px;}
+#song-meta{flex:1;overflow:hidden;}
+#song-title{font-size:6px;color:#fde68a;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#song-artist{font-size:5px;color:#f9a8d4;margin-bottom:7px;}
+#now-playing-tag{font-size:4px;color:#e879a0;background:#2d0020;border:1px solid #e879a0;padding:3px 6px;display:inline-block;}
+#audio-viz{padding:8px 16px 0;display:flex;align-items:flex-end;gap:2px;height:40px;}
+.avbar{flex:1;background:#e879a0;min-height:2px;opacity:0.7;}
+#progress-section{padding:10px 16px 0;}
+#prog-bar{height:5px;background:#3d0030;cursor:pointer;position:relative;margin-bottom:4px;}
+#prog-fill{height:5px;background:#e879a0;width:0%;transition:width .4s linear;pointer-events:none;}
+#prog-handle{position:absolute;top:-4px;width:12px;height:12px;background:#fde68a;border:2px solid #e879a0;border-radius:50%;transform:translateX(-6px);transition:left .4s linear;pointer-events:none;}
+#time-row{display:flex;justify-content:space-between;font-size:5px;color:#f9a8d4;}
+#controls-section{display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px 0;}
+.ctrl{font-family:'Press Start 2P',monospace;background:#120008;color:#f9a8d4;border:2px solid #831843;cursor:pointer;padding:6px 8px;font-size:8px;line-height:1;}
+.ctrl:hover{background:#2d0020;color:#fde68a;border-color:#e879a0;}
+#play-btn{font-size:12px;padding:8px 11px;border-color:#e879a0;color:#fde68a;}
+.ctrl.active{border-color:#fde68a;color:#fde68a;}
+#vol-section{display:flex;align-items:center;gap:10px;padding:8px 16px 0;}
+#vol-icon{font-size:9px;color:#f9a8d4;cursor:pointer;}
+#vol-slider{flex:1;height:3px;accent-color:#e879a0;cursor:pointer;}
+#vol-val{font-size:5px;color:#f9a8d4;min-width:26px;text-align:right;}
+#tracklist-section{margin:10px 16px 0;border:2px solid #2d0020;}
+#tl-header{background:#2d0020;padding:6px 10px;font-size:5px;color:#f9a8d4;}
+#tl{max-height:190px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#831843 #1a0010;}
+.ti{display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-bottom:1px solid #1e0015;font-size:4px;}
+.ti:hover{background:#200015;}.ti.active{background:#3d0030;}
+.tn{color:#831843;min-width:14px;}.tt{color:#fbcfe8;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.tar{color:#f9a8d4;white-space:nowrap;}
+.ti.active .tt{color:#fde68a;}
+#spotify-section{padding:10px 16px 0;}
+#sp-btn{display:block;width:100%;font-family:'Press Start 2P',monospace;font-size:6px;background:#1DB954;color:#fff;border:none;padding:10px;cursor:pointer;text-decoration:none;text-align:center;}
+#sp-btn:hover{background:#1ed760;}
+#back-btn2{font-family:'Press Start 2P',monospace;font-size:5px;padding:6px 10px;background:#2d0020;color:#f9a8d4;border:2px solid #831843;cursor:pointer;margin:10px 16px 0;display:inline-block;}
+#back-btn2:hover{background:#4c0030;color:#fde68a;}
+
+/* floating hearts layer */
+#hearts-layer{position:fixed;inset:0;pointer-events:none;z-index:99;overflow:hidden;display:none;}
+.fh{position:absolute;bottom:-20px;font-size:16px;animation:fhup 3s ease-in forwards;}
+@keyframes fhup{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(-260px) rotate(20deg);}}
+</style>
+</head>
+<body>
+<div id="hearts-layer"></div>
+
+<!-- SCREEN 1: INTRO -->
+<div class="screen active" id="s-intro">
+  <canvas id="ic" width="336" height="200"></canvas>
+  <div id="dbox"><div id="spk">CUPID</div><div id="dtxt"><span id="dts"></span><span id="dcur"></span></div></div>
+  <div id="crow"></div>
+  <button id="nxtbtn" onclick="nextScene()">NEXT ▶</button>
+</div>
+
+<!-- SCREEN 2: MAZE -->
+<div class="screen" id="s-maze">
+  <div id="level-badge">LEVEL 1</div>
+  <div id="hud">
+    <span class="hl">LVL</span><span class="hv" id="hlvl">1</span>
+    <span class="hl">❤</span><span class="hv" id="hh">♥♥♥</span>
+    <span class="hl">⏱</span><span class="hv" id="htimer">60</span>
+    <span class="hl">🌹</span><span class="hv" id="hroses">0</span>
+    <span class="hl">★</span><span class="hv" id="hscore">0</span>
+  </div>
+  <div id="timer-bar"><div id="timer-fill"></div></div>
+  <div id="cv-wrap">
+    <canvas id="gc" width="336" height="336"></canvas>
+    <div id="hit-flash"></div>
+  </div>
+  <div id="mmsg">ARROW KEYS / WASD — REACH THE ♥ GIFT!</div>
+  <div id="mbtns">
+    <button class="lb" onclick="restartLevel()">↺ RESTART</button>
+    <button class="lb" onclick="skipToPlayer()">SKIP ▶▶</button>
+  </div>
+</div>
+
+<!-- SCREEN 3: WIN -->
+<div class="screen" id="s-win">
+  <canvas id="win-canvas"></canvas>
+  <div id="win-body">
+    <div id="win-title">♥ LOVE FOUND! ♥</div>
+    <div id="win-subtitle">Cupid finally got his shot right!</div>
+    <div id="cupid-win-wrap"><canvas id="cwc" width="200" height="130"></canvas></div>
+    <div id="win-grade">S</div>
+    <div id="win-grade-label">GRADE</div>
+    <div id="win-stats">
+      <div class="wstat"><span class="wstat-l">LEVEL REACHED</span><span class="wstat-r" id="ws-lvl">1</span></div>
+      <div class="wstat"><span class="wstat-l">TIME TAKEN</span><span class="wstat-r" id="ws-time">0s</span></div>
+      <div class="wstat"><span class="wstat-l">STEPS TAKEN</span><span class="wstat-r" id="ws-steps">0</span></div>
+      <div class="wstat"><span class="wstat-l">ROSES COLLECTED</span><span class="wstat-r" id="ws-roses">0</span></div>
+      <div class="wstat"><span class="wstat-l">LIVES REMAINING</span><span class="wstat-r" id="ws-lives">0</span></div>
+      <div class="wstat"><span class="wstat-l">TIME BONUS</span><span class="wstat-r" id="ws-tbonus">+0</span></div>
+      <div class="wstat"><span class="wstat-l">ROSE BONUS</span><span class="wstat-r" id="ws-rbonus">+0</span></div>
+      <div class="wstat"><span class="wstat-l">LIFE BONUS</span><span class="wstat-r" id="ws-lbonus">+0</span></div>
+    </div>
+    <div id="win-total">TOTAL SCORE: <span id="ws-total">0</span></div>
+    <div id="win-cupid-msg"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+      <button class="win-btn primary" onclick="goToPlayer()">♥ CLAIM PLAYLIST</button>
+      <button class="win-btn" onclick="nextLevel()">NEXT LEVEL ▶</button>
+      <button class="win-btn" onclick="restartGame()">↺ PLAY AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 4: MUSIC PLAYER -->
+<div class="screen" id="s-player">
+  <div id="player-hero">
+    <div id="hero-title">♥ CUPID'S PLAYLIST ♥</div>
+    <div id="hero-sub">my dearest, jasmine · by bien</div>
+    <div id="hero-congrats">YOU SURVIVED THE MAZE OF LOVE!</div>
+  </div>
+  <div id="player-body">
+    <div id="album-section">
+      <div id="album-art"><img id="aimg" src="" alt=""/><div id="album-fb">♥</div></div>
+      <div id="song-meta">
+        <div id="song-title">Kingston</div>
+        <div id="song-artist">Faye Webster</div>
+        <div id="now-playing-tag">♪ NOW PLAYING</div>
+      </div>
+    </div>
+    <div id="audio-viz"></div>
+    <div id="progress-section">
+      <div id="prog-bar" onclick="seekTrack(event)">
+        <div id="prog-fill"></div>
+        <div id="prog-handle" style="left:0%"></div>
+      </div>
+      <div id="time-row"><span id="tc">0:00</span><span id="td">3:13</span></div>
+    </div>
+    <div id="controls-section">
+      <button class="ctrl" id="shuffle-btn" onclick="toggleShuffle()">⇄</button>
+      <button class="ctrl" onclick="prevTrack()">⏮</button>
+      <button class="ctrl" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="ctrl" onclick="nextTrack()">⏭</button>
+      <button class="ctrl" id="repeat-btn" onclick="toggleRepeat()">↺</button>
+    </div>
+    <div id="vol-section">
+      <span id="vol-icon">♪</span>
+      <input type="range" id="vol-slider" min="0" max="100" value="80" step="1" oninput="setVol(this.value)"/>
+      <span id="vol-val">80</span>
+    </div>
+    <div id="tracklist-section">
+      <div id="tl-header">♥ TRACKLIST — 23 SONGS</div>
+      <div id="tl"></div>
+    </div>
+    <div id="spotify-section">
+      <a id="sp-btn" href="https://open.spotify.com/playlist/7KGLOl9cUGlaDKArLAe65Z" target="_blank">▶ OPEN FULL PLAYLIST IN SPOTIFY</a>
+    </div>
+    <button id="back-btn2" onclick="restartGame()">← PLAY MAZE AGAIN</button>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════
+   TRACKS
+══════════════════════════════ */
+const TRACKS=[
+  {t:"Kingston",a:"Faye Webster",i:"ab67616d00004851ac4ebd092fa2cf210e4c8023",dur:193},
+  {t:"Neu Roses (Transgressor's Song)",a:"Daniel Caesar",i:"ab67616d000048517aa8783ad8def37cc548a9cf",dur:214},
+  {t:"All I Really Want Is You",a:"The Marías",i:"ab67616d00004851657d6776f64aa731c8d1748b",dur:228},
+  {t:"The Most Beautiful Thing",a:"Bruno Major",i:"ab67616d0000485195998c6ca2c759356eee3c3b",dur:243},
+  {t:"Nobody New",a:"The Marías",i:"ab67616d00004851a66ab2cbaebcc84ddd45a078",dur:208},
+  {t:"My Love Mine All Mine",a:"Mitski",i:"ab67616d000048514e549e50bad2fe59df943c97",dur:177},
+  {t:"I Don't Wanna Be Okay Without You",a:"Charlie Burg",i:"ab67616d00004851c699d66824a938624c44c2b7",dur:196},
+  {t:"In A Good Way",a:"Faye Webster",i:"ab67616d000048513528b18d761e6c3d6dfd55d6",dur:222},
+  {t:"Who are you?",a:"Saga Faye",i:"ab67616d000048513484239e39cde74c74d69888",dur:184},
+  {t:"still love you (todavía)",a:"The Two Lips",i:"ab67616d0000485164d1be1a04b30d4251c8dbfb",dur:189},
+  {t:"Nothin' Without You",a:"Hangsung",i:"ab67616d00004851f9d4e66989bed6fba67cbec2",dur:201},
+  {t:"wave",a:"wave to earth",i:"ab67616d000048513484239e39cde74c74d69888",dur:218},
+  {t:"bird",a:"wave to earth",i:"ab67616d00004851ee461c1dff39922128089519",dur:197},
+  {t:"(Only) About Love - Demo",a:"grentperez",i:"ab67616d00004851deb94b2957cbe7429a23f85c",dur:211},
+  {t:"Loose",a:"Daniel Caesar",i:"ab67616d000048517aa8783ad8def37cc548a9cf",dur:235},
+  {t:"Nobody Else",a:"Midday Wednesday",i:"ab67616d00004851b5bed89c545f17bf4732ceef",dur:206},
+  {t:"BEAUTiFUL",a:"Paul Partohap",i:"ab67616d00004851b0405be46c5cae86051ce4e5",dur:224},
+  {t:"Silver Lining",a:"grentperez",i:"ab67616d000048514061f6965ab6f93fb0740b16",dur:199},
+  {t:"Still",a:"Jeff Bernat",i:"ab67616d0000485149bfa64a9446e5af24df08f7",dur:231},
+  {t:"Aura",a:"IV OF SPADES",i:"ab67616d00004851294985e6269d78f98b1dada1",dur:245},
+  {t:"Afford You",a:"Amaria",i:"ab67616d00004851d3cc0334c56c812542fa188c",dur:187},
+  {t:"Everything I Know About Love",a:"Laufey",i:"ab67616d0000485148341e864d4b4881f56f01b4",dur:216},
+  {t:"ONLY",a:"LEEHI",i:"ab67616d00004851d5d11b6ac4242aaa41c8be69",dur:203},
+];
+
+/* ══════════════════════════════
+   SCREEN MANAGER
+══════════════════════════════ */
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+/* ══════════════════════════════
+   INTRO
+══════════════════════════════ */
+const SCENES=[
+  {spk:"CUPID",txt:"Oh great. Another human who thinks\nlove is a MAZE.",mood:"annoyed"},
+  {spk:"CUPID",txt:"*trips on own wings*\nI'm FINE. This is fine.",mood:"falling"},
+  {spk:"CUPID",txt:"Look... I was SUPPOSED to shoot you\nwith an arrow but I ATE TOO MANY\nCOOKIES. My aim is completely off.",mood:"guilty"},
+  {spk:"CUPID",txt:"Last week I made a guy fall in love\nwith a PARKING METER.\nDon't ask about the lamp post.",mood:"sweat"},
+  {spk:"YOU",txt:"...Should I be worried?",mood:"scared"},
+  {spk:"CUPID",txt:"WORRIED?! Pffft. No no no.\nJust complete this love maze\nand I'll sort everything out.",mood:"nervous",choices:[{l:"I WON'T FAIL",n:6},{l:"HOW BAD CAN IT BE",n:7}]},
+  {spk:"CUPID",txt:"You won't! Probably. Maybe.\nI have snacks if you do.",mood:"shrug",jump:8},
+  {spk:"CUPID",txt:"Bad. VERY bad. Remember the\nparking meter guy? Yeah.\nDon't ask about the lamp post.",mood:"panic",jump:8},
+  {spk:"CUPID",txt:"BONUS TIP: Collect the 🌹 roses!\nWatch out for the ghost — it\nchases you and costs a life!",mood:"happy"},
+  {spk:"CUPID",txt:"You have a TIMER per level.\nFaster = more points. Now GO.\nMy wings are ASLEEP.",mood:"sleepy",last:true},
+];
+let si=0,typeIv=null,typed=0,curTxt='',choiceW=false,iraf=null;
+const ic=document.getElementById('ic'),ictx=ic.getContext('2d');
+
+function drawIntro(){
+  const mood=SCENES[si]?SCENES[si].mood:'happy';
+  ictx.fillStyle='#1a0010';ictx.fillRect(0,0,336,200);
+  for(let r=0;r<13;r++)for(let c=0;c<21;c++){ictx.fillStyle=(r+c)%2===0?'#1f0014':'#1a0010';ictx.fillRect(c*16,r*16,16,16);}
+  drawCupidSpr(ictx,100,110,mood);drawYouSpr(ictx,240,112,mood==='scared');
+  if(mood==='falling'){ictx.fillStyle='#fde68a';ictx.font="6px 'Press Start 2P',monospace";ictx.textAlign='left';ictx.textBaseline='top';ictx.fillText('WHOOPS!!',52,18);}
+  if(mood==='sweat'){ictx.fillStyle='#93c5fd';ictx.font="6px 'Press Start 2P',monospace";ictx.textAlign='center';ictx.textBaseline='top';ictx.fillText('*sweating*',100,14);}
+  if(mood==='sleepy'){ictx.fillStyle='#c4b5fd';ictx.font="8px 'Press Start 2P',monospace";ictx.textAlign='center';ictx.textBaseline='top';ictx.fillText('z z Z',120,10);}
+}
+function drawCupidSpr(c,x,y,mood){
+  const bob=mood==='falling'?18:0;
+  c.save();c.translate(x,y+bob);if(mood==='falling')c.rotate(0.28);
+  c.fillStyle='#fde68a';c.fillRect(-18,-44,10,16);c.fillRect(8,-44,10,16);
+  c.fillStyle='#e879a0';c.fillRect(-20,-56,12,14);c.fillRect(8,-56,12,14);
+  c.fillStyle='#fbcfe8';c.fillRect(-12,-74,24,24);
+  c.fillStyle='#e879a0';c.fillRect(-6,-70,12,10);
+  c.fillStyle='#1c1917';
+  if(mood==='happy'||mood==='shrug'){c.fillRect(-4,-66,4,4);c.fillRect(3,-66,4,4);}
+  else if(mood==='nervous'||mood==='panic'){c.fillStyle='#fff';c.fillRect(-5,-68,5,5);c.fillRect(2,-68,5,5);c.fillStyle='#1c1917';c.fillRect(-4,-66,3,3);c.fillRect(3,-66,3,3);}
+  else{c.fillRect(-4,-66,4,4);c.fillRect(3,-66,4,4);}
+  if(mood==='annoyed'||mood==='guilty')c.fillRect(-6,-72,16,3);
+  c.fillStyle='#e879a0';
+  if(mood==='happy')c.fillRect(-4,-60,10,3);
+  else if(mood==='annoyed'||mood==='guilty')c.fillRect(-3,-59,8,2);
+  else if(mood==='nervous'||mood==='panic'){c.fillRect(-4,-60,4,2);c.fillRect(2,-58,4,2);}
+  else c.fillRect(-3,-59,8,2);
+  c.fillStyle='#fbcfe8';c.fillRect(-14,-50,10,20);c.fillRect(4,-50,10,20);
+  c.fillStyle='#e879a0';c.fillRect(-10,-30,20,28);
+  c.fillStyle='#fbcfe8';c.fillRect(-12,0,8,16);c.fillRect(4,0,8,16);
+  if(mood==='shrug'){c.fillRect(-22,-40,8,6);c.fillRect(14,-40,8,6);}
+  c.fillStyle='#fde68a';c.fillRect(-28,-54,5,28);
+  c.fillStyle='#e879a0';c.fillRect(-28,-66,5,4);c.fillStyle='#fde68a';c.fillRect(-36,-64,10,5);
+  c.restore();
+}
+function drawYouSpr(c,x,y,scared){
+  c.fillStyle='#fbcfe8';c.fillRect(x-9,y-52,18,18);
+  c.fillStyle='#1c1917';
+  if(scared){c.fillStyle='#fff';c.fillRect(x-5,y-49,5,5);c.fillRect(x+2,y-49,5,5);c.fillStyle='#1c1917';c.fillRect(x-4,y-47,3,3);c.fillRect(x+3,y-47,3,3);c.fillStyle='#e879a0';c.fillRect(x-3,y-41,9,2);}
+  else{c.fillRect(x-3,y-47,4,4);c.fillRect(x+2,y-47,4,4);c.fillStyle='#e879a0';c.fillRect(x-2,y-41,8,2);}
+  c.fillStyle='#f9a8d4';c.fillRect(x-11,y-34,22,22);
+  c.fillStyle='#fde68a';c.fillRect(x-8,y-68,16,17);
+  c.fillStyle='#fbcfe8';c.fillRect(x-9,y-12,7,18);c.fillRect(x+2,y-12,7,18);
+  c.fillStyle='#f9a8d4';c.fillRect(x-7,y+6,7,14);c.fillRect(x,y+6,7,14);
+  c.fillStyle='#fde68a';c.font="bold 8px 'Press Start 2P',monospace";c.textAlign='center';c.textBaseline='middle';c.fillText('?',x+22,y-60);
+}
+function typeText(txt,cb){
+  clearInterval(typeIv);typed=0;curTxt=txt;document.getElementById('dts').textContent='';
+  typeIv=setInterval(()=>{typed++;document.getElementById('dts').textContent=curTxt.slice(0,typed);if(typed>=curTxt.length){clearInterval(typeIv);if(cb)cb();}},36);
+}
+function showScene(idx){
+  if(idx>=SCENES.length){launchMaze();return;}
+  si=idx;const s=SCENES[idx];
+  document.getElementById('spk').textContent=s.spk||'YOU';
+  document.getElementById('crow').innerHTML='';
+  document.getElementById('nxtbtn').style.display='block';
+  choiceW=false;
+  typeText(s.txt,()=>{
+    if(s.choices&&s.choices.length){
+      choiceW=true;const cr=document.getElementById('crow');
+      s.choices.forEach(ch=>{const b=document.createElement('button');b.className='cbtn';b.textContent=ch.l;b.onclick=()=>showScene(ch.n);cr.appendChild(b);});
+      document.getElementById('nxtbtn').style.display='none';
+    }
+  });
+}
+function nextScene(){
+  if(typed<curTxt.length){clearInterval(typeIv);typed=curTxt.length;document.getElementById('dts').textContent=curTxt;const s=SCENES[si];if(s.choices&&s.choices.length){choiceW=true;const cr=document.getElementById('crow');cr.innerHTML='';s.choices.forEach(ch=>{const b=document.createElement('button');b.className='cbtn';b.textContent=ch.l;b.onclick=()=>showScene(ch.n);cr.appendChild(b);});document.getElementById('nxtbtn').style.display='none';}return;}
+  if(choiceW)return;
+  const s=SCENES[si];if(s.last){launchMaze();return;}showScene(s.jump!==undefined?s.jump:si+1);
+}
+function animIntro(){drawIntro();iraf=requestAnimationFrame(animIntro);}
+function launchMaze(){cancelAnimationFrame(iraf);showScreen('s-maze');initGame();}
+
+/* ══════════════════════════════
+   MAZE GAME
+══════════════════════════════ */
+const COLS=21,ROWS=21,CELL=16;
+const MC=document.getElementById('gc'),mctx=MC.getContext('2d');
+
+// Game state
+let level=1,lives=3,totalScore=0,totalRoses=0,totalSteps=0;
+let maze,player,exitPos,roses,ghost;
+let msteps,mRoses,mwon,mdead,mtick,mblink,mraf;
+let timerMax,timerLeft,timerIv,levelStartTime;
+
+function levelConfig(lvl){
+  return{
+    timerSec: Math.max(30, 90-lvl*8),
+    ghostSpeed: Math.max(4, 12-lvl),   // ticks per ghost move
+    numRoses: 3+lvl,
+  };
+}
+
+function genMaze(){
+  const g=Array.from({length:ROWS},()=>Array(COLS).fill(1));
+  const st=[{r:1,c:1}];g[1][1]=0;
+  const D=[{r:-2,c:0},{r:2,c:0},{r:0,c:-2},{r:0,c:2}];
+  while(st.length){
+    const cur=st[st.length-1];
+    const sh=D.map(d=>({...d,o:Math.random()})).sort((a,b)=>a.o-b.o);
+    let mv=false;
+    for(const d of sh){const nr=cur.r+d.r,nc=cur.c+d.c;
+      if(nr>0&&nr<ROWS-1&&nc>0&&nc<COLS-1&&g[nr][nc]===1){g[cur.r+d.r/2][cur.c+d.c/2]=0;g[nr][nc]=0;st.push({r:nr,c:nc});mv=true;break;}}
+    if(!mv)st.pop();
+  }
+  return g;
+}
+function getPaths(){const ps=[];for(let r=1;r<ROWS-1;r++)for(let c=1;c<COLS-1;c++)if(maze[r][c]===0)ps.push({r,c});return ps;}
+function dist(a,b){return Math.abs(a.r-b.r)+Math.abs(a.c-b.c);}
+function randPath(exclude){const ps=getPaths().filter(p=>!exclude.some(e=>e.r===p.r&&e.c===p.c));return ps[Math.floor(Math.random()*ps.length)]||{r:3,c:3};}
+
+function initGame(){level=1;lives=3;totalScore=0;totalRoses=0;totalSteps=0;initLevel();}
+function restartGame(){initGame();showScreen('s-maze');}
+function restartLevel(){clearInterval(timerIv);if(mraf)cancelAnimationFrame(mraf);lives=Math.max(1,lives);initLevel();}
+function nextLevel(){level++;clearInterval(timerIv);if(mraf)cancelAnimationFrame(mraf);initLevel();showScreen('s-maze');}
+
+function initLevel(){
+  const cfg=levelConfig(level);
+  timerMax=cfg.timerSec;timerLeft=cfg.timerSec;
+  maze=genMaze();
+  const ps=getPaths();
+  player={r:1,c:1};
+  exitPos=ps.reduce((b,p)=>dist(p,{r:1,c:1})>dist(b,{r:1,c:1})?p:b,ps[0]);
+  // Place roses far from start and exit
+  roses=[];
+  for(let i=0;i<cfg.numRoses;i++){
+    const r=randPath([{r:1,c:1},exitPos,...roses]);
+    roses.push({r:r.r,c:r.c,collected:false});
+  }
+  // Ghost starts far from player
+  const gp=randPath([{r:1,c:1},exitPos]);
+  ghost={r:gp.r,c:gp.c,tick:0,speed:cfg.ghostSpeed,float:0,invuln:0};
+  msteps=0;mRoses=0;mwon=false;mdead=false;mtick=0;mblink=0;
+  levelStartTime=Date.now();
+  updateHUD();
+  document.getElementById('level-badge').textContent='LEVEL '+level;
+  setMsg('LEVEL '+level+' — COLLECT 🌹 ROSES & REACH ♥!');
+  clearInterval(timerIv);
+  timerIv=setInterval(tickTimer,1000);
+  if(mraf)cancelAnimationFrame(mraf);
+  mloop();
+}
+
+function tickTimer(){
+  if(mwon||mdead)return;
+  timerLeft--;
+  updateHUD();
+  if(timerLeft<=0){clearInterval(timerIv);timeOut();}
+}
+function timeOut(){
+  lives--;
+  if(lives<=0){lives=0;updateHUD();gameOver();return;}
+  updateHUD();flashHit();
+  setTimeout(()=>{clearInterval(timerIv);initLevel();},900);
+}
+function updateHUD(){
+  document.getElementById('hlvl').textContent=level;
+  document.getElementById('hh').textContent='♥'.repeat(Math.max(0,lives));
+  document.getElementById('htimer').textContent=timerLeft;
+  document.getElementById('hroses').textContent=mRoses;
+  document.getElementById('hscore').textContent=totalScore;
+  const pct=Math.max(0,timerLeft/timerMax)*100;
+  document.getElementById('timer-fill').style.width=pct+'%';
+  document.getElementById('timer-fill').style.background=pct>50?'#e879a0':pct>25?'#fbbf24':'#ef4444';
+}
+function setMsg(t){document.getElementById('mmsg').textContent=t;}
+
+function moveGhost(){
+  ghost.tick++;ghost.float+=0.12;
+  if(ghost.invuln>0)ghost.invuln--;
+  if(ghost.tick%ghost.speed!==0)return;
+  const dirs=[{r:-1,c:0},{r:1,c:0},{r:0,c:-1},{r:0,c:1}];
+  const valid=dirs.filter(d=>{const nr=ghost.r+d.r,nc=ghost.c+d.c;return nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&maze[nr][nc]===0;});
+  if(!valid.length)return;
+  // 70% chase, 30% random
+  const chase=Math.random()<0.70;
+  let best=valid[0];
+  if(chase){valid.forEach(d=>{const nr=ghost.r+d.r,nc=ghost.c+d.c;if(dist({r:nr,c:nc},player)<dist({r:ghost.r+best.r,c:ghost.c+best.c},player))best=d;});}
+  else best=valid[Math.floor(Math.random()*valid.length)];
+  ghost.r+=best.r;ghost.c+=best.c;
+}
+
+function checkGhostCollision(){
+  if(ghost.invuln>0)return;
+  if(ghost.r===player.r&&ghost.c===player.c){
+    lives--;ghost.invuln=60;
+    flashHit();
+    if(lives<=0){lives=0;updateHUD();gameOver();return;}
+    updateHUD();
+    setMsg('GHOST GOT YOU! ♥ REMAINING: '+'♥'.repeat(lives));
+  }
+}
+
+function flashHit(){
+  const f=document.getElementById('hit-flash');f.style.opacity='1';setTimeout(()=>f.style.opacity='0',200);}
+
+function gameOver(){
+  clearInterval(timerIv);cancelAnimationFrame(mraf);
+  setMsg('💔 GAME OVER — ALL LIVES LOST!');
+  spawnHearts('broken');
+  setTimeout(()=>{showWinScreen(true);},1200);
+}
+
+function mloop(){
+  mtick++;mblink++;
+  moveGhost();
+  checkGhostCollision();
+  if(!mwon&&!mdead)drawMaze();
+  if(!mwon&&!mdead)mraf=requestAnimationFrame(mloop);
+}
+
+const WC=['#2d0020','#3d0030','#4a0038'];
+function drawMaze(){
+  mctx.fillStyle='#1a0010';mctx.fillRect(0,0,336,336);
+  // Cells
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    const x=c*CELL,y=r*CELL;
+    if(maze[r][c]===1){
+      mctx.fillStyle=WC[Math.abs(r*5+c*7)%3];mctx.fillRect(x,y,CELL,CELL);
+      mctx.fillStyle='#e879a0';mctx.fillRect(x,y,CELL,2);
+      // tiny torch every 4 walls
+      if((r*3+c*7)%11===0&&r+1<ROWS&&maze[r+1]&&maze[r+1][c]===0){
+        mctx.fillStyle='#78350f';mctx.fillRect(x+7,y+8,2,5);
+        mctx.fillStyle='#fbbf24';mctx.fillRect(x+5,y+4,6,5);
+        mctx.fillStyle='#fef3c7';mctx.fillRect(x+6,y+3,4,2);
+      }
+    }else{
+      mctx.fillStyle=(r+c)%2===0?'#120008':'#180010';mctx.fillRect(x,y,CELL,CELL);
+    }
+  }
+  // Exit
+  const ex=exitPos,ex_x=ex.c*CELL,ex_y=ex.r*CELL;
+  const bc=['#e879a0','#f9a8d4','#fde68a'][Math.floor(mblink/7)%3];
+  mctx.fillStyle=bc+'44';mctx.fillRect(ex_x-1,ex_y-1,CELL+2,CELL+2);
+  mctx.fillStyle=bc;mctx.font="bold 11px 'Press Start 2P',monospace";
+  mctx.textAlign='center';mctx.textBaseline='middle';mctx.fillText('♥',ex_x+8,ex_y+9);
+  // Roses
+  roses.forEach(ro=>{
+    if(ro.collected)return;
+    const rx=ro.c*CELL+8,ry=ro.r*CELL+8;
+    const bob=Math.sin(mtick*0.08+ro.c)*1.5;
+    mctx.fillStyle='#4a1830';mctx.fillRect(rx-1,ry+1+bob,2,5);
+    mctx.fillStyle='#e879a0';mctx.fillRect(rx-3,ry-3+bob,6,5);
+    mctx.fillStyle='#fbcfe8';mctx.fillRect(rx-2,ry-4+bob,4,3);
+    mctx.fillStyle='#831843';mctx.fillRect(rx-1,ry-2+bob,2,2);
+  });
+  // Ghost
+  const gx=ghost.c*CELL,gy=ghost.r*CELL;
+  const gbob=Math.sin(ghost.float)*2.5;
+  const gAlpha=ghost.invuln>0?(ghost.invuln%10<5?0.3:0.9):0.92;
+  mctx.globalAlpha=gAlpha;
+  mctx.fillStyle='#f9a8d4';mctx.fillRect(gx+2,gy+2+gbob,12,10);mctx.fillRect(gx+1,gy+6+gbob,14,6);
+  for(let i=0;i<3;i++)mctx.fillRect(gx+1+i*4,gy+12+gbob,4,3);
+  mctx.fillStyle='#1c1917';mctx.fillRect(gx+4,gy+5+gbob,3,3);mctx.fillRect(gx+9,gy+5+gbob,3,3);
+  mctx.fillStyle='#e879a0';mctx.fillRect(gx+5,gy+6+gbob,1,1);mctx.fillRect(gx+10,gy+6+gbob,1,1);
+  mctx.globalAlpha=1;
+  // Player
+  const px=player.c*CELL,py=player.r*CELL;
+  mctx.fillStyle='#831843';mctx.fillRect(px+3,py+12,10,3);
+  mctx.fillStyle='#f9a8d4';mctx.fillRect(px+4,py+8,8,7);mctx.fillRect(px+5,py+4,6,5);
+  mctx.fillStyle='#fde68a';mctx.fillRect(px+5,py+2,6,4);
+  mctx.fillStyle='#1c1917';mctx.fillRect(px+6,py+4,2,2);mctx.fillRect(px+9,py+4,2,2);
+  mctx.fillStyle='#f9a8d4';mctx.fillRect(px+2,py+8,3,5);mctx.fillRect(px+11,py+8,3,5);
+}
+
+document.addEventListener('keydown',e=>{
+  const m={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1],KeyW:[-1,0],KeyS:[1,0],KeyA:[0,-1],KeyD:[0,1]};
+  if(!m[e.code])return;e.preventDefault();
+  if(!document.getElementById('s-maze').classList.contains('active')||mwon||mdead)return;
+  const [dr,dc]=m[e.code],nr=player.r+dr,nc=player.c+dc;
+  if(nr<0||nr>=ROWS||nc<0||nc>=COLS||maze[nr][nc]!==0)return;
+  player.r=nr;player.c=nc;msteps++;totalSteps++;
+  // Collect rose
+  roses.forEach(ro=>{if(!ro.collected&&ro.r===player.r&&ro.c===player.c){ro.collected=true;mRoses++;totalRoses++;totalScore+=150;updateHUD();}});
+  updateHUD();
+  if(player.r===exitPos.r&&player.c===exitPos.c)handleWin();
+});
+
+function handleWin(){
+  mwon=true;clearInterval(timerIv);cancelAnimationFrame(mraf);
+  const timeTaken=Math.round((Date.now()-levelStartTime)/1000);
+  const timeBonus=Math.max(0,timerLeft)*20;
+  const roseBonus=mRoses*150;
+  const lifeBonus=lives*200;
+  const lvlScore=500*level+timeBonus+roseBonus+lifeBonus;
+  totalScore+=lvlScore;
+  updateHUD();
+  spawnHearts('love');
+  setTimeout(()=>showWinScreen(false,timeTaken,timeBonus,roseBonus,lifeBonus),900);
+}
+
+/* ══════════════════════════════
+   WIN SCREEN
+══════════════════════════════ */
+const WIN_MSGS=[
+  ["S","💖 ABSOLUTELY PERFECT! Cupid is weeping. Beautiful tears.","You are a MAZE GOD. Please adopt Cupid."],
+  ["A","✨ AMAZING! Cupid tripped trying to applaud you!","His wings finally worked for once."],
+  ["B","🌹 GREAT JOB! Cupid says 'not bad, not bad at all'.","He also ate all the snacks celebrating."],
+  ["C","💫 NICE! Cupid gives a thumbs up. Slowly. One thumb.","His other hand is holding a cookie."],
+  ["D","😅 YOU MADE IT! Cupid is relieved. Very relieved.","He was about to call the parking meter again."],
+  ["F","💔 YOU SURVIVED... BARELY. Cupid cried a little.","But he still loves you. He loves everyone. He has no choice."],
+];
+function getGrade(score,level){
+  const max=(500*level+timerMax*20+(3+level)*150+3*200);
+  const pct=score/max;
+  if(pct>=0.90)return WIN_MSGS[0];
+  if(pct>=0.75)return WIN_MSGS[1];
+  if(pct>=0.60)return WIN_MSGS[2];
+  if(pct>=0.45)return WIN_MSGS[3];
+  if(pct>=0.25)return WIN_MSGS[4];
+  return WIN_MSGS[5];
+}
+
+let fwRaf=null,fwParticles=[];
+function showWinScreen(isGameOver,timeTaken=0,timeBonus=0,roseBonus=0,lifeBonus=0){
+  showScreen('s-win');
+  const wc=document.getElementById('win-canvas');
+  wc.width=window.innerWidth||400;wc.height=window.innerHeight||700;
+  // Update stats
+  document.getElementById('ws-lvl').textContent=level;
+  document.getElementById('ws-time').textContent=(timeTaken||0)+'s';
+  document.getElementById('ws-steps').textContent=totalSteps;
+  document.getElementById('ws-roses').textContent=totalRoses;
+  document.getElementById('ws-lives').textContent='♥'.repeat(Math.max(0,lives));
+  document.getElementById('ws-tbonus').textContent='+'+timeBonus;
+  document.getElementById('ws-rbonus').textContent='+'+roseBonus;
+  document.getElementById('ws-lbonus').textContent='+'+lifeBonus;
+  document.getElementById('ws-total').textContent=totalScore;
+  if(isGameOver){
+    document.getElementById('win-title').textContent='💔 GAME OVER 💔';
+    document.getElementById('win-subtitle').textContent='Cupid is disappointed. (Not really. He loves you.)';
+    document.getElementById('win-grade').textContent='💔';
+    document.getElementById('win-grade-label').textContent='OUCH';
+    document.getElementById('win-cupid-msg').textContent='You ran out of lives! But hey, at least you tried.\nCupid says: "Same thing happened to me with the lamp post."';
+  } else {
+    const g=getGrade(totalScore,level);
+    document.getElementById('win-title').textContent='♥ LOVE FOUND! ♥';
+    document.getElementById('win-subtitle').textContent='Cupid finally got his shot right!';
+    document.getElementById('win-grade').textContent=g[0];
+    document.getElementById('win-grade-label').textContent='GRADE';
+    document.getElementById('win-cupid-msg').innerHTML=g[1]+'<br><br>'+g[2];
+  }
+  // Animate cupid on win screen
+  const cwc=document.getElementById('cwc'),cwctx=cwc.getContext('2d');
+  let cwt=0;
+  function animCW(){cwt++;cwctx.fillStyle='#1a0010';cwctx.fillRect(0,0,200,130);drawCupidSpr(cwctx,100,90,isGameOver?'panic':'happy');requestAnimationFrame(animCW);}
+  animCW();
+  // Fireworks
+  if(!isGameOver)launchFireworks(wc);
+}
+function launchFireworks(wc){
+  const ctx=wc.getContext('2d');
+  fwParticles=[];
+  function burst(x,y){
+    const cols=['#e879a0','#fde68a','#fbcfe8','#f9a8d4','#ff6699','#fff'];
+    for(let i=0;i<36;i++){
+      const ang=Math.random()*Math.PI*2,spd=1.5+Math.random()*3.5;
+      fwParticles.push({x,y,vx:Math.cos(ang)*spd,vy:Math.sin(ang)*spd,life:1,col:cols[Math.floor(Math.random()*cols.length)],size:3+Math.random()*4,char:['♥','★','✿','♡'][Math.floor(Math.random()*4)]});
+    }
+  }
+  let launchCount=0;
+  const launchIv=setInterval(()=>{
+    burst(Math.random()*wc.width,60+Math.random()*(wc.height*0.5));
+    launchCount++;if(launchCount>12)clearInterval(launchIv);
+  },350);
+  function animFW(){
+    ctx.clearRect(0,0,wc.width,wc.height);
+    fwParticles.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=0.06;p.vx*=0.98;p.life-=0.012;
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.fillStyle=p.col;ctx.font=p.size+'px serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(p.char,p.x,p.y);
+    });
+    ctx.globalAlpha=1;
+    fwParticles=fwParticles.filter(p=>p.life>0);
+    fwRaf=requestAnimationFrame(animFW);
+  }
+  if(fwRaf)cancelAnimationFrame(fwRaf);animFW();
+}
+
+function goToPlayer(){if(fwRaf)cancelAnimationFrame(fwRaf);showScreen('s-player');buildTL();loadTrack(0);buildPlayerViz();}
+function skipToPlayer(){clearInterval(timerIv);if(mraf)cancelAnimationFrame(mraf);showWinScreen(false,0,0,0,0);}
+
+/* ══════════════════════════════
+   FLOATING HEARTS
+══════════════════════════════ */
+function spawnHearts(type){
+  const hl=document.getElementById('hearts-layer');hl.style.display='block';hl.innerHTML='';
+  const sets={love:['♥','♡','★','✿','♥'],broken:['💔','✕','·','💔','!']};
+  const cols={love:['#e879a0','#fde68a','#fbcfe8','#f9a8d4'],broken:['#ff4455','#ff8888','#cc2233','#ff0044']};
+  const emojis=sets[type]||sets.love;const cs=cols[type]||cols.love;
+  for(let i=0;i<28;i++){const s=document.createElement('span');s.className='fh';s.textContent=emojis[i%emojis.length];s.style.left=Math.random()*100+'%';s.style.color=cs[i%cs.length];s.style.animationDelay=(Math.random()*1)+'s';s.style.fontSize=(12+Math.random()*10)+'px';hl.appendChild(s);}
+  setTimeout(()=>{hl.style.display='none';hl.innerHTML='';},3500);
+}
+
+/* ══════════════════════════════
+   MUSIC PLAYER
+══════════════════════════════ */
+let curTrack=0,isPlaying=false,progTimer=null,elapsed=0,shuffle=false,repeat=false,pVizRaf=null;
+function fmtTime(s){const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec;}
+function buildTL(){
+  const tl=document.getElementById('tl');tl.innerHTML='';
+  TRACKS.forEach((t,i)=>{const d=document.createElement('div');d.className='ti'+(i===0?' active':'');d.innerHTML='<span class="tn">'+(i+1)+'</span><span class="tt">'+t.t+'</span><span class="tar">'+t.a+'</span>';d.onclick=()=>{loadTrack(i);startPlay();};tl.appendChild(d);});
+}
+function loadTrack(i){
+  curTrack=i;elapsed=0;isPlaying=false;clearInterval(progTimer);
+  const t=TRACKS[i];
+  document.getElementById('song-title').textContent=t.t;document.getElementById('song-artist').textContent=t.a;
+  document.getElementById('play-btn').textContent='▶';document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('prog-handle').style.left='0%';document.getElementById('tc').textContent='0:00';
+  document.getElementById('td').textContent=fmtTime(t.dur);
+  const img=document.getElementById('aimg'),fb=document.getElementById('album-fb');
+  img.style.display='none';fb.style.display='block';
+  img.onload=()=>{img.style.display='block';fb.style.display='none';};
+  img.onerror=()=>{img.style.display='none';fb.style.display='block';};
+  img.src='https://i.scdn.co/image/'+t.i;
+  document.querySelectorAll('.ti').forEach((el,idx)=>el.classList.toggle('active',idx===i));
+  const active=document.querySelector('.ti.active');if(active)active.scrollIntoView({block:'nearest'});
+}
+function startPlay(){
+  if(isPlaying)return;isPlaying=true;document.getElementById('play-btn').textContent='⏸';
+  const dur=TRACKS[curTrack].dur;
+  progTimer=setInterval(()=>{elapsed++;const pct=Math.min((elapsed/dur)*100,100);document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('prog-handle').style.left=pct+'%';document.getElementById('tc').textContent=fmtTime(elapsed);if(elapsed>=dur){clearInterval(progTimer);onTrackEnd();}},1000);
+}
+function pausePlay(){isPlaying=false;document.getElementById('play-btn').textContent='▶';clearInterval(progTimer);}
+function togglePlay(){if(isPlaying)pausePlay();else startPlay();}
+function onTrackEnd(){if(repeat){elapsed=0;startPlay();return;}nextTrack();}
+function nextTrack(){const n=shuffle?Math.floor(Math.random()*TRACKS.length):(curTrack+1)%TRACKS.length;loadTrack(n);startPlay();}
+function prevTrack(){if(elapsed>3){elapsed=0;startPlay();return;}loadTrack((curTrack-1+TRACKS.length)%TRACKS.length);startPlay();}
+function toggleShuffle(){shuffle=!shuffle;document.getElementById('shuffle-btn').classList.toggle('active',shuffle);}
+function toggleRepeat(){repeat=!repeat;document.getElementById('repeat-btn').classList.toggle('active',repeat);}
+function setVol(v){document.getElementById('vol-val').textContent=v;}
+function seekTrack(e){const bar=document.getElementById('prog-bar'),pct=Math.max(0,Math.min(1,e.offsetX/bar.offsetWidth));elapsed=Math.floor(pct*TRACKS[curTrack].dur);document.getElementById('prog-fill').style.width=(pct*100)+'%';document.getElementById('prog-handle').style.left=(pct*100)+'%';document.getElementById('tc').textContent=fmtTime(elapsed);}
+function buildPlayerViz(){
+  const viz=document.getElementById('audio-viz');viz.innerHTML='';const bars=[];
+  for(let i=0;i<28;i++){const b=document.createElement('div');b.className='avbar';b.style.height='2px';viz.appendChild(b);bars.push(b);}
+  if(pVizRaf)cancelAnimationFrame(pVizRaf);
+  function anim(){const t=Date.now()*0.003;bars.forEach((b,i)=>{const h=isPlaying?(Math.abs(Math.sin(t*1.8+i*0.5))*28+Math.abs(Math.cos(t*2.3+i*0.9))*12+3):2;b.style.height=Math.round(h)+'px';b.style.opacity=isPlaying?(0.5+Math.abs(Math.sin(t+i*0.4))*0.5).toFixed(2):'0.3';});pVizRaf=requestAnimationFrame(anim);}
+  anim();
+}
+
+/* ══════════════════════════════
+   BOOT
+══════════════════════════════ */
+showScene(0);
+animIntro();
+</script>
+</body>
+</html>
